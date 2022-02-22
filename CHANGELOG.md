@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v2.0.0...v2.1.0) (2022-02-22)
+
+
+### Features
+
+* separate plugin from index ([bf9d76d](https://github.com/mikaelkaron/fastify-openid-auth/commit/bf9d76d93e06e14cb7514e438fe5538d17a61550))
+
 # [2.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v1.0.0...v2.0.0) (2022-02-22)
 
 
