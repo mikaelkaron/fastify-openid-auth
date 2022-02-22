@@ -19,6 +19,7 @@ declare module 'fastify' {
     };
   }
 }
+
 export interface OpenIDLoginOptions {
   params?: AuthorizationParameters;
   extras?: CallbackExtras;
