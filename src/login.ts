@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/method-signature-style */
 import { RouteHandlerMethod } from 'fastify';
 import {
   AuthorizationParameters,
@@ -10,6 +11,14 @@ import {
 import { format } from 'util';
 import { OpenIDWriteTokens } from './types';
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    session: {
+      get(key: string): any;
+      set(key: string, value: any): void;
+    };
+  }
+}
 export interface OpenIDLoginOptions {
   params?: AuthorizationParameters;
   extras?: CallbackExtras;
