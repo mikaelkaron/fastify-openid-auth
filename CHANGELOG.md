@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v1.0.0...v2.0.0) (2022-02-22)
+
+
+### Features
+
+* separate auth factories into individual files ([3a152ad](https://github.com/mikaelkaron/fastify-openid-auth/commit/3a152adb421047f76df78d0c2b573a0fdb984835))
+
+
+### BREAKING CHANGES
+
+* read/write no longer gets the client as an argument
+
 # 1.0.0 (2022-02-10)
 
 
