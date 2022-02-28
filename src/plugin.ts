@@ -1,41 +1,34 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, RouteHandlerMethod } from 'fastify';
 import fp from 'fastify-plugin';
 import { Client } from 'openid-client';
+import { openIDLoginHandlerFactory, OpenIDLoginHandlerOptions } from './login';
 import {
-  openIDAuthLoginFactory,
-  OpenIDLoginHandlerFactory,
-  OpenIDLoginOptions,
-} from './login';
-import {
-  openIDAuthLogoutFactory,
-  OpenIDLogoutHandlerFactory,
-  OpenIDLogoutOptions,
+  openIDLogoutHandlerFactory,
+  OpenIDLogoutHandlerOptions,
 } from './logout';
 import {
-  openIDAuthRefreshFactory,
-  OpenIDRefreshHandlerFactory,
-  OpenIDRefreshOptions,
+  openIDRefreshHandlerFactory,
+  OpenIDRefreshHandlerOptions,
 } from './refresh';
 import {
-  openIDAuthVerifyFactory,
-  OpenIDVerifyHandlerFactory,
-  OpenIDVerifyOptions,
+  openIDVerifyHandlerFactory,
+  OpenIDVerifyHandlerOptions,
 } from './verify';
 
 export interface FastifyOpenIDAuthPluginOptions {
   name: string;
   client: Client;
-  login?: OpenIDLoginOptions;
-  verify: OpenIDVerifyOptions;
-  refresh: OpenIDRefreshOptions;
-  logout: OpenIDLogoutOptions;
+  login?: OpenIDLoginHandlerOptions;
+  verify: OpenIDVerifyHandlerOptions;
+  refresh: OpenIDRefreshHandlerOptions;
+  logout: OpenIDLogoutHandlerOptions;
 }
 
 export interface OpenIDAuthNamespace {
-  login: OpenIDLoginHandlerFactory;
-  verify: OpenIDVerifyHandlerFactory;
-  refresh: OpenIDRefreshHandlerFactory;
-  logout: OpenIDLogoutHandlerFactory;
+  login: RouteHandlerMethod;
+  verify: RouteHandlerMethod;
+  refresh: RouteHandlerMethod;
+  logout: RouteHandlerMethod;
 }
 
 export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions> =
@@ -44,10 +37,10 @@ export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions
       const { name, client, login, refresh, verify, logout } = options;
 
       const openIDAuthNamespace: OpenIDAuthNamespace = {
-        login: openIDAuthLoginFactory(client, login),
-        refresh: openIDAuthRefreshFactory(client, refresh),
-        verify: openIDAuthVerifyFactory(verify),
-        logout: openIDAuthLogoutFactory(client, logout),
+        login: openIDLoginHandlerFactory(client, login),
+        refresh: openIDRefreshHandlerFactory(client, refresh),
+        verify: openIDVerifyHandlerFactory(verify),
+        logout: openIDLogoutHandlerFactory(client, logout),
       };
 
       fastify.log.trace(

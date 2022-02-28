@@ -20,17 +20,13 @@ declare module 'fastify' {
   }
 }
 
-export interface OpenIDLoginOptions {
+export interface OpenIDLoginHandlerOptions {
   params?: AuthorizationParameters;
   extras?: CallbackExtras;
   usePKCE?: boolean | 'plain' | 'S256';
   sessionKey?: string;
   write?: OpenIDWriteTokens;
 }
-
-export type OpenIDLoginHandlerFactory = (
-  options?: OpenIDLoginOptions
-) => RouteHandlerMethod;
 
 const pick = <T, K extends keyof T>(obj: T, ...keys: K[]): Pick<T, K> => {
   const ret: any = {};
@@ -85,118 +81,104 @@ const resolveSessionKey = (issuer: Issuer): string => {
   return `oidc:${new URL(issuer.metadata.issuer).hostname}`;
 };
 
-export const openIDAuthLoginFactory = (
+export const openIDLoginHandlerFactory = (
   client: Client,
-  defaults?: OpenIDLoginOptions
-): OpenIDLoginHandlerFactory => {
-  const _params: AuthorizationParameters = {
+  options?: OpenIDLoginHandlerOptions
+): RouteHandlerMethod => {
+  const params: AuthorizationParameters = {
     scope: 'openid',
     response_type: resolveResponseType(client),
     redirect_uri: resolveRedirectUri(client),
-    ...defaults?.params,
+    ...options?.params,
   };
-  const _sessionKey =
-    defaults?.sessionKey !== undefined
-      ? defaults.sessionKey
+  const sessionKey =
+    options?.sessionKey !== undefined
+      ? options.sessionKey
       : resolveSessionKey(client.issuer);
-  const _usePKCE =
-    defaults?.usePKCE !== undefined
-      ? defaults.usePKCE === true
+  const usePKCE =
+    options?.usePKCE !== undefined
+      ? options.usePKCE === true
         ? resolveSupportedMethods(client.issuer)
-        : defaults.usePKCE
+        : options.usePKCE
       : false;
 
-  const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (options?) => {
-    const {
-      sessionKey = _sessionKey,
-      usePKCE = _usePKCE,
-      write,
-    } = { ...defaults, ...options };
+  const { write } = { ...options };
 
-    return async function openIDLoginHandler(request, reply) {
-      const parameters = client.callbackParams(request.raw);
+  return async function openIDLoginHandler(request, reply) {
+    const callbackParams = client.callbackParams(request.raw);
 
-      // #region authentication request
-      if (Object.keys(parameters).length === 0) {
-        const params = {
-          state: generators.random(),
-          ..._params,
-          ...options?.params,
-        };
-        if (params.nonce === undefined && params.response_type === 'code') {
-          params.nonce = generators.random();
-        }
-        const sessionValue: Record<string, unknown> = pick(
-          params,
-          'nonce',
-          'state',
-          'max_age',
-          'response_type'
-        );
-        if (usePKCE !== false && params.response_type === 'code') {
-          const verifier = generators.random();
-
-          sessionValue.code_verifier = verifier;
-
-          switch (usePKCE) {
-            case 'S256':
-              params.code_challenge = generators.codeChallenge(verifier);
-              params.code_challenge_method = 'S256';
-              break;
-            case 'plain':
-              params.code_challenge = verifier;
-              break;
-          }
-        }
-
-        request.session.set(sessionKey, sessionValue);
-
-        return await reply.redirect(client.authorizationUrl(params));
-      }
-      // #endregion
-
-      // #region authentication response
-      const sessionValue = request.session.get(sessionKey);
+    // #region authentication request
+    if (Object.keys(callbackParams).length === 0) {
+      const parameters = {
+        state: generators.random(),
+        ...params,
+      };
       if (
-        sessionValue === undefined ||
-        Object.keys(sessionValue).length === 0
+        parameters.nonce === undefined &&
+        parameters.response_type === 'code'
       ) {
-        throw new Error(
-          format(
-            'did not find expected authorization request details in session, req.session["%s"] is %j',
-            sessionKey,
-            sessionValue
-          )
-        );
+        parameters.nonce = generators.random();
+      }
+      const sessionValue: Record<string, unknown> = pick(
+        parameters,
+        'nonce',
+        'state',
+        'max_age',
+        'response_type'
+      );
+      if (usePKCE !== false && parameters.response_type === 'code') {
+        const verifier = generators.random();
+
+        sessionValue.code_verifier = verifier;
+
+        switch (usePKCE) {
+          case 'S256':
+            parameters.code_challenge = generators.codeChallenge(verifier);
+            parameters.code_challenge_method = 'S256';
+            break;
+          case 'plain':
+            parameters.code_challenge = verifier;
+            break;
+        }
       }
 
-      request.session.set(sessionKey, undefined);
+      request.session.set(sessionKey, sessionValue);
 
-      const params = {
-        ..._params,
-        ...options?.params,
-      };
-      const extras = { ...defaults?.extras, ...options?.extras };
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { state, nonce, max_age, code_verifier, response_type } =
-        sessionValue;
-      const checks: OpenIDCallbackChecks = {
-        state,
-        nonce,
-        max_age,
-        code_verifier,
-        response_type,
-      };
-      const tokenset = await client.callback(
-        params.redirect_uri,
-        parameters,
-        checks,
-        extras
+      return await reply.redirect(client.authorizationUrl(parameters));
+    }
+    // #endregion
+
+    // #region authentication response
+    const sessionValue = request.session.get(sessionKey);
+    if (sessionValue === undefined || Object.keys(sessionValue).length === 0) {
+      throw new Error(
+        format(
+          'did not find expected authorization request details in session, req.session["%s"] is %j',
+          sessionKey,
+          sessionValue
+        )
       );
-      return await write?.call(this, request, reply, tokenset);
-      // #endregion
-    };
-  };
+    }
 
-  return openIDLoginHandlerFactory;
+    request.session.set(sessionKey, undefined);
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const { state, nonce, max_age, code_verifier, response_type } =
+      sessionValue;
+    const callbackChecks: OpenIDCallbackChecks = {
+      state,
+      nonce,
+      max_age,
+      code_verifier,
+      response_type,
+    };
+    const tokenset = await client.callback(
+      params.redirect_uri,
+      callbackParams,
+      callbackChecks,
+      options?.extras
+    );
+    return await write?.call(this, request, reply, tokenset);
+    // #endregion
+  };
 };
