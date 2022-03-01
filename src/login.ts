@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/method-signature-style */
+/* eslint-disable @typescript-eslint/naming-convention */
 import { RouteHandlerMethod } from 'fastify';
 import {
   AuthorizationParameters,
@@ -14,27 +14,19 @@ import { OpenIDWriteTokens } from './types';
 declare module 'fastify' {
   interface FastifyRequest {
     session: {
-      get(key: string): any;
-      set(key: string, value: any): void;
+      get: <T>(key: string) => T;
+      set: (key: string, value: unknown) => void;
     };
   }
 }
 
 export interface OpenIDLoginHandlerOptions {
-  params?: AuthorizationParameters;
+  parameters?: AuthorizationParameters;
   extras?: CallbackExtras;
   usePKCE?: boolean | 'plain' | 'S256';
   sessionKey?: string;
   write?: OpenIDWriteTokens;
 }
-
-const pick = <T, K extends keyof T>(obj: T, ...keys: K[]): Pick<T, K> => {
-  const ret: any = {};
-  keys.forEach((key) => {
-    ret[key] = obj[key];
-  });
-  return ret;
-};
 
 const resolveResponseType = (client: Client): string | undefined => {
   const { length, 0: value } = client.metadata.response_types ?? [];
@@ -85,12 +77,10 @@ export const openIDLoginHandlerFactory = (
   client: Client,
   options?: OpenIDLoginHandlerOptions
 ): RouteHandlerMethod => {
-  const params: AuthorizationParameters = {
-    scope: 'openid',
-    response_type: resolveResponseType(client),
-    redirect_uri: resolveRedirectUri(client),
-    ...options?.params,
-  };
+  const redirect_uri =
+    options?.parameters?.redirect_uri !== undefined
+      ? options.parameters.redirect_uri
+      : resolveRedirectUri(client);
   const sessionKey =
     options?.sessionKey !== undefined
       ? options.sessionKey
@@ -109,9 +99,16 @@ export const openIDLoginHandlerFactory = (
 
     // #region authentication request
     if (Object.keys(callbackParams).length === 0) {
+      const response_type =
+        options?.parameters?.response_type !== undefined
+          ? options.parameters.response_type
+          : resolveResponseType(client);
       const parameters = {
+        scope: 'openid',
         state: generators.random(),
-        ...params,
+        redirect_uri,
+        response_type,
+        ...options?.parameters,
       };
       if (
         parameters.nonce === undefined &&
@@ -119,17 +116,16 @@ export const openIDLoginHandlerFactory = (
       ) {
         parameters.nonce = generators.random();
       }
-      const sessionValue: Record<string, unknown> = pick(
-        parameters,
-        'nonce',
-        'state',
-        'max_age',
-        'response_type'
-      );
+      const callbackChecks: OpenIDCallbackChecks = (({
+        nonce,
+        state,
+        max_age,
+        response_type,
+      }) => ({ nonce, state, max_age, response_type }))(parameters);
       if (usePKCE !== false && parameters.response_type === 'code') {
         const verifier = generators.random();
 
-        sessionValue.code_verifier = verifier;
+        callbackChecks.code_verifier = verifier;
 
         switch (usePKCE) {
           case 'S256':
@@ -142,38 +138,32 @@ export const openIDLoginHandlerFactory = (
         }
       }
 
-      request.session.set(sessionKey, sessionValue);
+      request.session.set(sessionKey, callbackChecks);
 
       return await reply.redirect(client.authorizationUrl(parameters));
     }
     // #endregion
 
     // #region authentication response
-    const sessionValue = request.session.get(sessionKey);
-    if (sessionValue === undefined || Object.keys(sessionValue).length === 0) {
+    const callbackChecks: OpenIDCallbackChecks =
+      request.session.get(sessionKey);
+    if (
+      callbackChecks === undefined ||
+      Object.keys(callbackChecks).length === 0
+    ) {
       throw new Error(
         format(
           'did not find expected authorization request details in session, req.session["%s"] is %j',
           sessionKey,
-          sessionValue
+          callbackChecks
         )
       );
     }
 
     request.session.set(sessionKey, undefined);
 
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { state, nonce, max_age, code_verifier, response_type } =
-      sessionValue;
-    const callbackChecks: OpenIDCallbackChecks = {
-      state,
-      nonce,
-      max_age,
-      code_verifier,
-      response_type,
-    };
     const tokenset = await client.callback(
-      params.redirect_uri,
+      redirect_uri,
       callbackParams,
       callbackChecks,
       options?.extras
