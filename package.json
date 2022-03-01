@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "fastify": "^3.27.1",
+    "fastify-error": "^1.0.0",
     "fastify-plugin": "^3.0.1",
     "jose": "^4.5.0",
     "openid-client": "^5.1.3"

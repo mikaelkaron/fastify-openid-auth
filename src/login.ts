@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { RouteHandlerMethod } from 'fastify';
+import createError from 'fastify-error';
 import {
   AuthorizationParameters,
   CallbackExtras,
@@ -8,7 +9,6 @@ import {
   Issuer,
   OpenIDCallbackChecks,
 } from 'openid-client';
-import { format } from 'util';
 import { OpenIDWriteTokens } from './types';
 
 declare module 'fastify' {
@@ -27,6 +27,24 @@ export interface OpenIDLoginHandlerOptions {
   sessionKey?: string;
   write?: OpenIDWriteTokens;
 }
+
+export const SessionKeyError = createError(
+  'FST_SESSION_KEY',
+  'client must have an issuer with an identifier',
+  500
+);
+
+export const SessionValueError = createError(
+  'FST_SESSION_VALUE',
+  'did not find expected authorization request details in req.session["%s"]',
+  500
+);
+
+export const SupportedMethodError = createError(
+  'FST_SUPPORTED_METHOD',
+  'neither code_challenge_method supported by the client is supported by the issuer',
+  500
+);
 
 const resolveResponseType = (client: Client): string | undefined => {
   const { length, 0: value } = client.metadata.response_types ?? [];
@@ -48,7 +66,7 @@ const resolveRedirectUri = (client: Client): string | undefined => {
   return undefined;
 };
 
-const resolveSupportedMethods = (issuer: Issuer): string => {
+const resolveSupportedMethod = (issuer: Issuer): string => {
   const supportedMethods = Array.isArray(
     issuer.code_challenge_methods_supported
   )
@@ -60,15 +78,13 @@ const resolveSupportedMethods = (issuer: Issuer): string => {
   } else if (supportedMethods.includes('plain')) {
     return 'plain';
   } else {
-    throw new TypeError(
-      'neither code_challenge_method supported by the client is supported by the issuer'
-    );
+    throw new SupportedMethodError();
   }
 };
 
 const resolveSessionKey = (issuer: Issuer): string => {
   if (issuer.metadata.issuer === undefined) {
-    throw new TypeError('client must have an issuer with an identifier');
+    throw new SessionKeyError();
   }
   return `oidc:${new URL(issuer.metadata.issuer).hostname}`;
 };
@@ -88,7 +104,7 @@ export const openIDLoginHandlerFactory = (
   const usePKCE =
     options?.usePKCE !== undefined
       ? options.usePKCE === true
-        ? resolveSupportedMethods(client.issuer)
+        ? resolveSupportedMethod(client.issuer)
         : options.usePKCE
       : false;
 
@@ -151,13 +167,7 @@ export const openIDLoginHandlerFactory = (
       callbackChecks === undefined ||
       Object.keys(callbackChecks).length === 0
     ) {
-      throw new Error(
-        format(
-          'did not find expected authorization request details in session, req.session["%s"] is %j',
-          sessionKey,
-          callbackChecks
-        )
-      );
+      throw new SessionValueError(sessionKey);
     }
 
     request.session.set(sessionKey, undefined);
