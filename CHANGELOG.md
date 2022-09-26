@@ -1,3 +1,10 @@
+## [4.0.2](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.0.1...v4.0.2) (2022-09-26)
+
+
+### Bug Fixes
+
+* update fastify version plugin annotation to 4.x ([0fc2427](https://github.com/mikaelkaron/fastify-openid-auth/commit/0fc2427331f74f1646c1ec8c35ce6f5c647a4ef8))
+
 ## [4.0.1](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.0.0...v4.0.1) (2022-09-26)
 
 
