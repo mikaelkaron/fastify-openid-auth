@@ -1,93 +1,93 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { RouteHandlerMethod } from 'fastify';
-import createError from '@fastify/error';
+import { RouteHandlerMethod } from 'fastify'
+import createError from '@fastify/error'
 import {
   AuthorizationParameters,
   CallbackExtras,
   Client,
   generators,
   Issuer,
-  OpenIDCallbackChecks,
-} from 'openid-client';
-import { OpenIDWriteTokens } from './types';
+  OpenIDCallbackChecks
+} from 'openid-client'
+import { OpenIDWriteTokens } from './types'
 
 declare module 'fastify' {
   interface FastifyRequest {
     session: {
-      get: <T>(key: string) => T;
-      set: (key: string, value: unknown) => void;
-    };
+      get: <T>(key: string) => T
+      set: (key: string, value: unknown) => void
+    }
   }
 }
 
 export interface OpenIDLoginHandlerOptions {
-  parameters?: AuthorizationParameters;
-  extras?: CallbackExtras;
-  usePKCE?: boolean | 'plain' | 'S256';
-  sessionKey?: string;
-  write?: OpenIDWriteTokens;
+  parameters?: AuthorizationParameters
+  extras?: CallbackExtras
+  usePKCE?: boolean | 'plain' | 'S256'
+  sessionKey?: string
+  write?: OpenIDWriteTokens
 }
 
 export const SessionKeyError = createError(
   'FST_SESSION_KEY',
   'client must have an issuer with an identifier',
   500
-);
+)
 
 export const SessionValueError = createError(
   'FST_SESSION_VALUE',
   'did not find expected authorization request details in req.session["%s"]',
   500
-);
+)
 
 export const SupportedMethodError = createError(
   'FST_SUPPORTED_METHOD',
   'neither code_challenge_method supported by the client is supported by the issuer',
   500
-);
+)
 
 const resolveResponseType = (client: Client): string | undefined => {
-  const { length, 0: value } = client.metadata.response_types ?? [];
+  const { length, 0: value } = client.metadata.response_types ?? []
 
   if (length === 1) {
-    return value;
+    return value
   }
 
-  return undefined;
-};
+  return undefined
+}
 
 const resolveRedirectUri = (client: Client): string | undefined => {
-  const { length, 0: value } = client.metadata.redirect_uris ?? [];
+  const { length, 0: value } = client.metadata.redirect_uris ?? []
 
   if (length === 1) {
-    return value;
+    return value
   }
 
-  return undefined;
-};
+  return undefined
+}
 
 const resolveSupportedMethod = (issuer: Issuer): string => {
   const supportedMethods = Array.isArray(
     issuer.code_challenge_methods_supported
   )
     ? issuer.code_challenge_methods_supported
-    : false;
+    : false
 
   if (supportedMethods === false || supportedMethods.includes('S256')) {
-    return 'S256';
+    return 'S256'
   } else if (supportedMethods.includes('plain')) {
-    return 'plain';
+    return 'plain'
   } else {
-    throw new SupportedMethodError();
+    throw new SupportedMethodError()
   }
-};
+}
 
 const resolveSessionKey = (issuer: Issuer): string => {
   if (issuer.metadata.issuer === undefined) {
-    throw new SessionKeyError();
+    throw new SessionKeyError()
   }
-  return `oidc:${new URL(issuer.metadata.issuer).hostname}`;
-};
+  return `oidc:${new URL(issuer.metadata.issuer).hostname}`
+}
 
 export const openIDLoginHandlerFactory = (
   client: Client,
@@ -96,89 +96,89 @@ export const openIDLoginHandlerFactory = (
   const redirect_uri =
     options?.parameters?.redirect_uri !== undefined
       ? options.parameters.redirect_uri
-      : resolveRedirectUri(client);
+      : resolveRedirectUri(client)
   const sessionKey =
     options?.sessionKey !== undefined
       ? options.sessionKey
-      : resolveSessionKey(client.issuer);
+      : resolveSessionKey(client.issuer)
   const usePKCE =
     options?.usePKCE !== undefined
       ? options.usePKCE === true
         ? resolveSupportedMethod(client.issuer)
         : options.usePKCE
-      : false;
+      : false
 
-  const { write } = { ...options };
+  const { write } = { ...options }
 
-  return async function openIDLoginHandler(request, reply) {
-    const callbackParams = client.callbackParams(request.raw);
+  return async function openIDLoginHandler (request, reply) {
+    const callbackParams = client.callbackParams(request.raw)
 
     // #region authentication request
     if (Object.keys(callbackParams).length === 0) {
       const response_type =
         options?.parameters?.response_type !== undefined
           ? options.parameters.response_type
-          : resolveResponseType(client);
+          : resolveResponseType(client)
       const parameters = {
         scope: 'openid',
         state: generators.random(),
         redirect_uri,
         response_type,
-        ...options?.parameters,
-      };
+        ...options?.parameters
+      }
       if (
         parameters.nonce === undefined &&
         parameters.response_type === 'code'
       ) {
-        parameters.nonce = generators.random();
+        parameters.nonce = generators.random()
       }
       const callbackChecks: OpenIDCallbackChecks = (({
         nonce,
         state,
         max_age,
-        response_type,
-      }) => ({ nonce, state, max_age, response_type }))(parameters);
+        response_type
+      }) => ({ nonce, state, max_age, response_type }))(parameters)
       if (usePKCE !== false && parameters.response_type === 'code') {
-        const verifier = generators.random();
+        const verifier = generators.random()
 
-        callbackChecks.code_verifier = verifier;
+        callbackChecks.code_verifier = verifier
 
         switch (usePKCE) {
           case 'S256':
-            parameters.code_challenge = generators.codeChallenge(verifier);
-            parameters.code_challenge_method = 'S256';
-            break;
+            parameters.code_challenge = generators.codeChallenge(verifier)
+            parameters.code_challenge_method = 'S256'
+            break
           case 'plain':
-            parameters.code_challenge = verifier;
-            break;
+            parameters.code_challenge = verifier
+            break
         }
       }
 
-      request.session.set(sessionKey, callbackChecks);
+      request.session.set(sessionKey, callbackChecks)
 
-      return await reply.redirect(client.authorizationUrl(parameters));
+      return await reply.redirect(client.authorizationUrl(parameters))
     }
     // #endregion
 
     // #region authentication response
     const callbackChecks: OpenIDCallbackChecks =
-      request.session.get(sessionKey);
+      request.session.get(sessionKey)
     if (
       callbackChecks === undefined ||
       Object.keys(callbackChecks).length === 0
     ) {
-      throw new SessionValueError(sessionKey);
+      throw new SessionValueError(sessionKey)
     }
 
-    request.session.set(sessionKey, undefined);
+    request.session.set(sessionKey, undefined)
 
     const tokenset = await client.callback(
       redirect_uri,
       callbackParams,
       callbackChecks,
       options?.extras
-    );
-    return await write?.call(this, request, reply, tokenset);
+    )
+    return await write?.call(this, request, reply, tokenset)
     // #endregion
-  };
-};
+  }
+}
