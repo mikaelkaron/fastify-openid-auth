@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.0.0...v4.0.1) (2022-09-26)
+
+
+### Bug Fixes
+
+* make `FastifyRequest.session` compatible with `@fastify/secure-session` ([8ed15c9](https://github.com/mikaelkaron/fastify-openid-auth/commit/8ed15c9f495583398b784316826aad157cb55517))
+
 # [4.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v3.0.0...v4.0.0) (2022-09-26)
 
 
