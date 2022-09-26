@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { RouteHandlerMethod } from 'fastify';
-import createError from 'fastify-error';
+import createError from '@fastify/error';
 import {
   AuthorizationParameters,
   CallbackExtras,
