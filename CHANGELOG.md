@@ -1,3 +1,20 @@
+# [4.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v3.0.0...v4.0.0) (2022-09-26)
+
+
+### Bug Fixes
+
+* auto-fix eslint ([9a5bfa8](https://github.com/mikaelkaron/fastify-openid-auth/commit/9a5bfa82db5f0d201f7dc54242a54cf51f9574d9))
+
+
+### Features
+
+* bump deps ([e15e322](https://github.com/mikaelkaron/fastify-openid-auth/commit/e15e32283c3a1f50c239c1a2dbe7c9d4d8245e66))
+
+
+### BREAKING CHANGES
+
+* This bumps `fastify@4`
+
 # [3.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v2.1.0...v3.0.0) (2022-03-01)
 
 
