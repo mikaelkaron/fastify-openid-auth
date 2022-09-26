@@ -13,11 +13,19 @@ import { OpenIDWriteTokens } from './types'
 
 declare module 'fastify' {
   interface FastifyRequest {
-    session: {
-      get: <T>(key: string) => T
-      set: (key: string, value: unknown) => void
-    }
+    session: Session
   }
+
+  interface Session {
+    // eslint-disable-next-line @typescript-eslint/method-signature-style
+    get<Key extends keyof SessionData>(key: Key): SessionData[Key] | undefined
+    // eslint-disable-next-line @typescript-eslint/method-signature-style
+    set<Key extends keyof SessionData>(key: Key, value: SessionData[Key] | undefined): void
+  }
+}
+
+export interface SessionData {
+  [key: string]: any
 }
 
 export interface OpenIDLoginHandlerOptions {
