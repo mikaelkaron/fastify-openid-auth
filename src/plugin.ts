@@ -49,7 +49,7 @@ export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions
       fastify.decorate(name, openIDAuthNamespace)
     },
     {
-      fastify: '3.x',
+      fastify: '4.x',
       name: 'fastify-openid-auth',
       decorators: {
         request: ['session']
