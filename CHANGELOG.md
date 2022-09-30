@@ -1,3 +1,10 @@
+# [4.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.0.2...v4.1.0) (2022-09-30)
+
+
+### Features
+
+* Pass around `TokenSetParameters` instead of `TokenSet` as it's an interface ([4c44e0c](https://github.com/mikaelkaron/fastify-openid-auth/commit/4c44e0cf1067139d542ce8fb933485b6348a36d8))
+
 ## [4.0.2](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.0.1...v4.0.2) (2022-09-26)
 
 
