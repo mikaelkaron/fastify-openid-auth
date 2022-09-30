@@ -1,5 +1,5 @@
 import { RouteHandlerMethod } from 'fastify'
-import { Client, RefreshExtras } from 'openid-client'
+import { Client, RefreshExtras, TokenSet } from 'openid-client'
 import { OpenIDReadTokens, OpenIDWriteTokens } from './types'
 
 export interface OpenIDRefreshHandlerOptions {
@@ -15,7 +15,7 @@ export const openIDRefreshHandlerFactory = (
   const { extras, read, write } = options
 
   return async function openIDRefreshHandler (request, reply) {
-    const oldTokenset = await read.call(this, request, reply)
+    const oldTokenset = new TokenSet(await read.call(this, request, reply))
     if (oldTokenset.expired()) {
       request.log.trace(
         `OpenID token expired ${

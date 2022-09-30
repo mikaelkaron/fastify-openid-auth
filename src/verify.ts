@@ -1,10 +1,10 @@
 import { RouteHandlerMethod } from 'fastify'
 import { jwtVerify, JWTVerifyGetKey, JWTVerifyOptions, KeyLike } from 'jose'
-import { TokenSet } from 'openid-client'
+import { TokenSetParameters } from 'openid-client'
 import { OpenIDReadTokens, OpenIDWriteTokens } from './types'
 
 export type OpenIDVerifyTokens = keyof Pick<
-TokenSet,
+TokenSetParameters,
 'id_token' | 'access_token' | 'refresh_token'
 >
 
