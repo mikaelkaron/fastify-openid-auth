@@ -1,3 +1,15 @@
+# [5.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.1.0...v5.0.0) (2023-06-29)
+
+
+### Build System
+
+* **package:** bump deps ([a9cad5f](https://github.com/mikaelkaron/fastify-openid-auth/commit/a9cad5f70de363fecc76176afcd563b597dd5759))
+
+
+### BREAKING CHANGES
+
+* **package:** A lot of deps had major version updates, bump accordingly
+
 # [4.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.0.2...v4.1.0) (2022-09-30)
 
 
