@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { type RouteHandlerMethod } from 'fastify'
 import createError from '@fastify/error'
+import { type RouteHandlerMethod } from 'fastify'
 import {
+  generators,
   type AuthorizationParameters,
   type CallbackExtras,
   type Client,
-  generators,
   type Issuer,
   type OpenIDCallbackChecks
 } from 'openid-client'
 import { type OpenIDWriteTokens } from './types'
+import { openIDJWTVerify, type OpenIDVerifyOptions } from './verify'
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -31,8 +32,14 @@ export interface OpenIDLoginHandlerOptions {
   extras?: CallbackExtras
   usePKCE?: boolean | 'plain' | 'S256'
   sessionKey?: string
+  verify?: OpenIDVerifyOptions
   write?: OpenIDWriteTokens
 }
+
+export type OpenIDLoginHandlerFactory = (
+  client: Client,
+  options?: OpenIDLoginHandlerOptions
+) => RouteHandlerMethod
 
 export const SessionKeyError = createError(
   'FST_SESSION_KEY',
@@ -95,10 +102,10 @@ const resolveSessionKey = (issuer: Issuer): string => {
   return `oidc:${new URL(issuer.metadata.issuer).hostname}`
 }
 
-export const openIDLoginHandlerFactory = (
-  client: Client,
-  options?: OpenIDLoginHandlerOptions
-): RouteHandlerMethod => {
+export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
+  client,
+  options
+) => {
   const redirect_uri =
     options?.parameters?.redirect_uri !== undefined
       ? options.parameters.redirect_uri
@@ -114,7 +121,7 @@ export const openIDLoginHandlerFactory = (
         : options.usePKCE
       : false
 
-  const { write } = { ...options }
+  const { verify, extras, write } = { ...options }
 
   return async function openIDLoginHandler (request, reply) {
     const callbackParams = client.callbackParams(request.raw)
@@ -182,9 +189,12 @@ export const openIDLoginHandlerFactory = (
       redirect_uri,
       callbackParams,
       callbackChecks,
-      options?.extras
+      extras
     )
-    return await write?.call(this, request, reply, tokenset)
+    const verified = verify !== undefined
+      ? await openIDJWTVerify(tokenset, verify)
+      : undefined
+    return await write?.call(this, request, reply, tokenset, verified)
     // #endregion
   }
 }
