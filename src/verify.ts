@@ -1,7 +1,7 @@
 import { type RouteHandlerMethod } from 'fastify'
-import { jwtVerify, type JWTVerifyGetKey, type JWTVerifyOptions, type JWTVerifyResult, type KeyLike } from 'jose'
+import { jwtVerify, type JWTVerifyGetKey, type JWTVerifyOptions, type KeyLike } from 'jose'
 import { type TokenSetParameters } from 'openid-client'
-import { type OpenIDReadTokens, type OpenIDTokens, type OpenIDWriteTokens } from './types'
+import { type OpenIDJWTVerified, type OpenIDReadTokens, type OpenIDTokens, type OpenIDWriteTokens } from './types'
 
 export interface OpenIDVerifyOptions {
   options?: JWTVerifyOptions
@@ -9,17 +9,17 @@ export interface OpenIDVerifyOptions {
   tokens: OpenIDTokens[]
 }
 
-export type OpenIDJWTVerify = (tokenset: TokenSetParameters, options: OpenIDVerifyOptions) => Promise<Map<OpenIDTokens, JWTVerifyResult>>
+export type OpenIDJWTVerify = (tokenset: TokenSetParameters, options: OpenIDVerifyOptions) => Promise<OpenIDJWTVerified>
 
 export const openIDJWTVerify: OpenIDJWTVerify = async (tokenset, { key, options, tokens }) => {
-  const verified = new Map<OpenIDTokens, JWTVerifyResult>()
+  const verified: OpenIDJWTVerified = {}
   for (const token of tokens) {
     const jwt = tokenset[token]
     if (jwt !== undefined) {
       const result = key instanceof Function
         ? await jwtVerify(jwt, key, options)
         : await jwtVerify(jwt, key, options)
-      verified.set(token, result)
+      verified[token] = result
     }
   }
   return verified

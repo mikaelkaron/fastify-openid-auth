@@ -7,6 +7,9 @@ TokenSetParameters,
 'id_token' | 'access_token' | 'refresh_token'
 >
 
+export type OpenIDJWTVerified = {
+  [key in OpenIDTokens]?: JWTVerifyResult
+}
 export type OpenIDReadTokens = (
   this: FastifyInstance,
   request: FastifyRequest,
@@ -18,5 +21,5 @@ export type OpenIDWriteTokens = (
   request: FastifyRequest,
   reply: FastifyReply,
   tokenset: TokenSetParameters,
-  verified?: Map<OpenIDTokens, JWTVerifyResult>
+  verified?: OpenIDJWTVerified
 ) => Promise<void> | void
