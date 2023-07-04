@@ -1,6 +1,6 @@
-import { RouteHandlerMethod } from 'fastify'
-import { Client, RefreshExtras, TokenSet } from 'openid-client'
-import { OpenIDReadTokens, OpenIDWriteTokens } from './types'
+import { type RouteHandlerMethod } from 'fastify'
+import { type Client, type RefreshExtras, TokenSet } from 'openid-client'
+import { type OpenIDReadTokens, type OpenIDWriteTokens } from './types'
 
 export interface OpenIDRefreshHandlerOptions {
   extras?: RefreshExtras

@@ -1,5 +1,5 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import { TokenSetParameters } from 'openid-client'
+import { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
+import { type TokenSetParameters } from 'openid-client'
 
 export type OpenIDReadTokens = (
   this: FastifyInstance,

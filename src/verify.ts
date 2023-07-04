@@ -1,7 +1,7 @@
-import { RouteHandlerMethod } from 'fastify'
-import { jwtVerify, JWTVerifyGetKey, JWTVerifyOptions, KeyLike } from 'jose'
-import { TokenSetParameters } from 'openid-client'
-import { OpenIDReadTokens, OpenIDWriteTokens } from './types'
+import { type RouteHandlerMethod } from 'fastify'
+import { jwtVerify, type JWTVerifyGetKey, type JWTVerifyOptions, type KeyLike } from 'jose'
+import { type TokenSetParameters } from 'openid-client'
+import { type OpenIDReadTokens, type OpenIDWriteTokens } from './types'
 
 export type OpenIDVerifyTokens = keyof Pick<
 TokenSetParameters,

@@ -1,18 +1,18 @@
-import { FastifyPluginAsync, RouteHandlerMethod } from 'fastify'
+import { type FastifyPluginAsync, type RouteHandlerMethod } from 'fastify'
 import fp from 'fastify-plugin'
-import { Client } from 'openid-client'
-import { openIDLoginHandlerFactory, OpenIDLoginHandlerOptions } from './login'
+import { type Client } from 'openid-client'
+import { openIDLoginHandlerFactory, type OpenIDLoginHandlerOptions } from './login'
 import {
   openIDLogoutHandlerFactory,
-  OpenIDLogoutHandlerOptions
+  type OpenIDLogoutHandlerOptions
 } from './logout'
 import {
   openIDRefreshHandlerFactory,
-  OpenIDRefreshHandlerOptions
+  type OpenIDRefreshHandlerOptions
 } from './refresh'
 import {
   openIDVerifyHandlerFactory,
-  OpenIDVerifyHandlerOptions
+  type OpenIDVerifyHandlerOptions
 } from './verify'
 
 export interface FastifyOpenIDAuthPluginOptions {

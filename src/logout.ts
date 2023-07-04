@@ -1,6 +1,6 @@
-import { RouteHandlerMethod } from 'fastify'
-import { Client, EndSessionParameters } from 'openid-client'
-import { OpenIDReadTokens, OpenIDWriteTokens } from './types'
+import { type RouteHandlerMethod } from 'fastify'
+import { type Client, type EndSessionParameters } from 'openid-client'
+import { type OpenIDReadTokens, type OpenIDWriteTokens } from './types'
 
 export interface OpenIDLogoutHandlerOptions {
   parameters?: EndSessionParameters

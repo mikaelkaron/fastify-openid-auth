@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { RouteHandlerMethod } from 'fastify'
+import { type RouteHandlerMethod } from 'fastify'
 import createError from '@fastify/error'
 import {
-  AuthorizationParameters,
-  CallbackExtras,
-  Client,
+  type AuthorizationParameters,
+  type CallbackExtras,
+  type Client,
   generators,
-  Issuer,
-  OpenIDCallbackChecks
+  type Issuer,
+  type OpenIDCallbackChecks
 } from 'openid-client'
-import { OpenIDWriteTokens } from './types'
+import { type OpenIDWriteTokens } from './types'
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -24,9 +24,7 @@ declare module 'fastify' {
   }
 }
 
-export interface SessionData {
-  [key: string]: any
-}
+export type SessionData = Record<string, any>
 
 export interface OpenIDLoginHandlerOptions {
   parameters?: AuthorizationParameters
