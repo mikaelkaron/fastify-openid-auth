@@ -1,3 +1,15 @@
+# [5.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v5.0.0...v5.1.0) (2023-07-04)
+
+
+### Bug Fixes
+
+* **lint:** fix lint errors ([29fd586](https://github.com/mikaelkaron/fastify-openid-auth/commit/29fd58687d1948a566e5a9cf3706ec17ab803b66))
+
+
+### Features
+
+* add `verified` to `write` ([d1dd878](https://github.com/mikaelkaron/fastify-openid-auth/commit/d1dd878c65c5259b1f5fecb6276c4860435aff15))
+
 # [5.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v4.1.0...v5.0.0) (2023-06-29)
 
 
