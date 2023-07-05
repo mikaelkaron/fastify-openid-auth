@@ -56,3 +56,5 @@ export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions
       }
     }
   )
+
+export default openIDAuthPlugin
