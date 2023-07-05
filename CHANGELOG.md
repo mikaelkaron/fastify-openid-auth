@@ -1,3 +1,15 @@
+# [6.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v5.1.0...v6.0.0) (2023-07-05)
+
+
+### Features
+
+* simplify return type of  `openIDJWTVerify` ([54ed7f7](https://github.com/mikaelkaron/fastify-openid-auth/commit/54ed7f759b3200780084c8e3af4d32d322f70a86))
+
+
+### BREAKING CHANGES
+
+* now returns `OpenIDJWTVerified` object instead of `Map<OpenIDTokens, JWTVerifyResult>`
+
 # [5.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v5.0.0...v5.1.0) (2023-07-04)
 
 
