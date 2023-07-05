@@ -17,11 +17,11 @@ declare module 'fastify' {
     session: Session
   }
 
-  interface Session {
+  type Session<T = SessionData> = Partial<T> & {
     // eslint-disable-next-line @typescript-eslint/method-signature-style
-    get<Key extends keyof SessionData>(key: Key): SessionData[Key] | undefined
+    get<Key extends keyof T>(key: Key): T[Key] | undefined
     // eslint-disable-next-line @typescript-eslint/method-signature-style
-    set<Key extends keyof SessionData>(key: Key, value: SessionData[Key] | undefined): void
+    set<Key extends keyof T>(key: Key, value: T[Key] | undefined): void
   }
 }
 
