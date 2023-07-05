@@ -1,7 +1,7 @@
 import { type RouteHandlerMethod } from 'fastify'
 import { TokenSet, type Client, type RefreshExtras } from 'openid-client'
 import { type OpenIDReadTokens, type OpenIDWriteTokens } from './types'
-import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify'
+import { openIDJWTVerify, type OpenIDVerifyOptions } from './verify'
 
 export interface OpenIDRefreshHandlerOptions {
   extras?: RefreshExtras

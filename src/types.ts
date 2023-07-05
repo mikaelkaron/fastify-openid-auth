@@ -10,6 +10,7 @@ TokenSetParameters,
 export type OpenIDJWTVerified = {
   [key in OpenIDTokens]?: JWTVerifyResult
 }
+
 export type OpenIDReadTokens = (
   this: FastifyInstance,
   request: FastifyRequest,
