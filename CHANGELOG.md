@@ -1,3 +1,23 @@
+# [7.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v6.0.0...v7.0.0) (2023-07-05)
+
+
+### Bug Fixes
+
+* align `Session` type with `@fastify/secure-session` ([f17b5f9](https://github.com/mikaelkaron/fastify-openid-auth/commit/f17b5f9dd0461ef1ebbfc6000a4a1ee0c0a29e9f))
+* rename `OpenIDAuthNamespace` to `OpenIDAuthHandlers` ([02c218b](https://github.com/mikaelkaron/fastify-openid-auth/commit/02c218b00c970532a28f3cb218709d256f587317))
+
+
+### Features
+
+* add `default` export to `plugin` ([84f901f](https://github.com/mikaelkaron/fastify-openid-auth/commit/84f901f1b4a89aa2cf5567f6fb9002f8d1d9543e))
+* renamed `name` to `decorator` ([cdc3418](https://github.com/mikaelkaron/fastify-openid-auth/commit/cdc3418ea8149d925d538e884d44e6658157051d))
+
+
+### BREAKING CHANGES
+
+* this was part of exported `FastifyOpenIDAuthPluginOptions`
+* exported name changed
+
 # [6.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v5.1.0...v6.0.0) (2023-07-05)
 
 
