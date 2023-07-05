@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import createError from '@fastify/error'
 import { type RouteHandlerMethod } from 'fastify'
-import {
-  generators,
+import openIDClient, {
   type AuthorizationParameters,
   type CallbackExtras,
   type Client,
@@ -58,6 +57,8 @@ export const SupportedMethodError = createError(
   'neither code_challenge_method supported by the client is supported by the issuer',
   500
 )
+
+const { generators } = openIDClient
 
 const resolveResponseType = (client: Client): string | undefined => {
   const { length, 0: value } = client.metadata.response_types ?? []
