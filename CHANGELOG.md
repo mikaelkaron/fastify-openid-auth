@@ -1,3 +1,10 @@
+## [8.0.1](https://github.com/mikaelkaron/fastify-openid-auth/compare/v8.0.0...v8.0.1) (2023-07-05)
+
+
+### Bug Fixes
+
+* destruct `generators` from default export of `openid-client` ([7ced5dc](https://github.com/mikaelkaron/fastify-openid-auth/commit/7ced5dc4d4f96b4d93ae8aeff625d920e271479e))
+
 # [8.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v7.0.0...v8.0.0) (2023-07-05)
 
 
