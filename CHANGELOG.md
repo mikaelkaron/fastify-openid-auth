@@ -1,3 +1,22 @@
+# [8.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v7.0.0...v8.0.0) (2023-07-05)
+
+
+### Bug Fixes
+
+* **package:** bump copyright year in `LICENSE` ([72a76a6](https://github.com/mikaelkaron/fastify-openid-auth/commit/72a76a69a67c893449a6e1ed836321dd46b8a8fc))
+* **package:** limit packaging to just `dist` ([3ba3f2b](https://github.com/mikaelkaron/fastify-openid-auth/commit/3ba3f2b24acce8df00086ca999bf4f525af4efd8))
+* **package:** make `fastify` a development dependency ([f7bde9f](https://github.com/mikaelkaron/fastify-openid-auth/commit/f7bde9fa08bcf8822045cd0bf06a726629752503))
+
+
+### Features
+
+* **package:** package as `ESM` ([f2a4ec2](https://github.com/mikaelkaron/fastify-openid-auth/commit/f2a4ec21cdd4b2b4798d14f5ba8ddb24e8e3a4e0))
+
+
+### BREAKING CHANGES
+
+* **package:** This package is now `ESM` only
+
 # [7.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v6.0.0...v7.0.0) (2023-07-05)
 
 
