@@ -24,7 +24,7 @@ export interface FastifyOpenIDAuthPluginOptions {
   logout: OpenIDLogoutHandlerOptions
 }
 
-export interface OpenIDAuthNamespace {
+export interface OpenIDAuthHandlers {
   login: RouteHandlerMethod
   verify: RouteHandlerMethod
   refresh: RouteHandlerMethod
@@ -36,7 +36,7 @@ export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions
     async (fastify, options) => {
       const { name, client, login, refresh, verify, logout } = options
 
-      const openIDAuthNamespace: OpenIDAuthNamespace = {
+      const openIDAuthHandlers: OpenIDAuthHandlers = {
         login: openIDLoginHandlerFactory(client, login),
         refresh: openIDRefreshHandlerFactory(client, refresh),
         verify: openIDVerifyHandlerFactory(verify),
