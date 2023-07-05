@@ -15,6 +15,9 @@
     "type": "git",
     "url": "git+https://github.com/mikaelkaron/fastify-openid-auth.git"
   },
+  "files": [
+    "dist/"
+  ],
   "keywords": [
     "fastify",
     "openid"
