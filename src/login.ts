@@ -9,8 +9,8 @@ import {
   type Issuer,
   type OpenIDCallbackChecks
 } from 'openid-client'
-import { type OpenIDWriteTokens } from './types'
-import { openIDJWTVerify, type OpenIDVerifyOptions } from './verify'
+import { type OpenIDWriteTokens } from './types.js'
+import { openIDJWTVerify, type OpenIDVerifyOptions } from './verify.js'
 
 declare module 'fastify' {
   interface FastifyRequest {

@@ -1,7 +1,7 @@
 import { type RouteHandlerMethod } from 'fastify'
 import { jwtVerify, type JWTVerifyGetKey, type JWTVerifyOptions, type KeyLike } from 'jose'
 import { type TokenSetParameters } from 'openid-client'
-import { type OpenIDJWTVerified, type OpenIDReadTokens, type OpenIDTokens, type OpenIDWriteTokens } from './types'
+import { type OpenIDJWTVerified, type OpenIDReadTokens, type OpenIDTokens, type OpenIDWriteTokens } from './types.js'
 
 export interface OpenIDVerifyOptions {
   options?: JWTVerifyOptions

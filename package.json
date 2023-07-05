@@ -2,8 +2,17 @@
   "name": "fastify-openid-auth",
   "version": "7.0.0",
   "description": "Fastify auth plugin for openid-client",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./login": "./dist/login.js",
+    "./logout": "./dist/logout.js",
+    "./plugin": "./dist/plugin.js",
+    "./refresh": "./dist/refresh.js",
+    "./verify": "./dist/verify.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc --declaration -p tsconfig.json",

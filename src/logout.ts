@@ -1,7 +1,7 @@
 import { type RouteHandlerMethod } from 'fastify'
 import { type Client, type EndSessionParameters } from 'openid-client'
-import { type OpenIDReadTokens, type OpenIDWriteTokens } from './types'
-import { openIDJWTVerify, type OpenIDVerifyOptions } from './verify'
+import { type OpenIDReadTokens, type OpenIDWriteTokens } from './types.js'
+import { openIDJWTVerify, type OpenIDVerifyOptions } from './verify.js'
 
 export interface OpenIDLogoutHandlerOptions {
   parameters?: EndSessionParameters
