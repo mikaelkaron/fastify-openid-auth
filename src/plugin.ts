@@ -16,7 +16,7 @@ import {
 } from './verify'
 
 export interface FastifyOpenIDAuthPluginOptions {
-  name: string
+  decorator: string | symbol
   client: Client
   login?: OpenIDLoginHandlerOptions
   verify: OpenIDVerifyHandlerOptions
@@ -34,7 +34,7 @@ export interface OpenIDAuthHandlers {
 export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions> =
   fp(
     async (fastify, options) => {
-      const { name, client, login, refresh, verify, logout } = options
+      const { decorator, client, login, refresh, verify, logout } = options
 
       const openIDAuthHandlers: OpenIDAuthHandlers = {
         login: openIDLoginHandlerFactory(client, login),
@@ -44,9 +44,9 @@ export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions
       }
 
       fastify.log.trace(
-        `decorating \`fastify[${name}]\` with OpenIDAuthNamespace`
+        `decorating \`fastify[${String(decorator)}]\` with OpenIDAuthHandlers`
       )
-      fastify.decorate(name, openIDAuthNamespace)
+      fastify.decorate(decorator, openIDAuthHandlers)
     },
     {
       fastify: '4.x',
