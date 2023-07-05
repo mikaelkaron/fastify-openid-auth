@@ -168,7 +168,7 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
       }
 
       request.session.set(sessionKey, callbackChecks)
-
+      request.log.trace('OpenID login redirect')
       return await reply.redirect(client.authorizationUrl(parameters))
     }
     // #endregion
@@ -194,6 +194,7 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
     const verified = verify !== undefined
       ? await openIDJWTVerify(tokenset, verify)
       : undefined
+    request.log.trace('OpenID login callback')
     return await write?.call(this, request, reply, tokenset, verified)
     // #endregion
   }

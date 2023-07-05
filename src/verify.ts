@@ -49,5 +49,6 @@ export const openIDVerifyHandlerFactory: OpenIDVerifyHandlerFactory = (
 ) => async function openIDVerifyHandler (request, reply) {
   const tokenset = await read.call(this, request, reply)
   const verified = await openIDJWTVerify(tokenset, verify)
+  request.log.trace('OpenID tokens verified')
   return await write?.call(this, request, reply, tokenset, verified)
 }

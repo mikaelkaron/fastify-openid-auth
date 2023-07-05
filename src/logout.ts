@@ -31,6 +31,7 @@ export const openIDLogoutHandlerFactory: OpenIDLogoutHandlerFactory = (
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { id_token, session_state } = tokenset
     if (id_token !== undefined) {
+      request.log.trace('OpenID logout redirect')
       return await reply.redirect(
         client.endSessionUrl({
           id_token_hint: id_token,
@@ -46,6 +47,7 @@ export const openIDLogoutHandlerFactory: OpenIDLogoutHandlerFactory = (
   const verified = verify !== undefined
     ? await openIDJWTVerify(tokenset, verify)
     : undefined
+  request.log.trace('OpenID logout callback')
   return await write?.call(this, request, reply, tokenset, verified)
   // #endregion
 }
