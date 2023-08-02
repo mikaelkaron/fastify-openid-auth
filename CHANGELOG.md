@@ -1,3 +1,10 @@
+## [8.0.2](https://github.com/mikaelkaron/fastify-openid-auth/compare/v8.0.1...v8.0.2) (2023-08-02)
+
+
+### Bug Fixes
+
+* handle refreshing tokens missing `expires_at` ([bcb54ec](https://github.com/mikaelkaron/fastify-openid-auth/commit/bcb54ec2643f11b95db88aea9241e44c6d17903e))
+
 ## [8.0.1](https://github.com/mikaelkaron/fastify-openid-auth/compare/v8.0.0...v8.0.1) (2023-07-05)
 
 

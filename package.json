@@ -1,6 +1,6 @@
 {
   "name": "fastify-openid-auth",
-  "version": "8.0.1",
+  "version": "8.0.2",
   "description": "Fastify auth plugin for openid-client",
   "type": "module",
   "module": "./dist/index.js",
