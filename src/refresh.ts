@@ -23,14 +23,12 @@ export const openIDRefreshHandlerFactory: OpenIDRefreshHandlerFactory = (
     read,
     write
   }
-) => async function openIDRefreshHandler (request, reply) {
+) => async function openIDRefreshHandler(request, reply) {
   const oldTokenset = new TokenSet(await read.call(this, request, reply))
-  if (oldTokenset.expired()) {
-    request.log.trace(
-      `OpenID token expired ${oldTokenset.expires_at !== undefined
-        ? new Date(oldTokenset.expires_at * 1000).toUTCString()
-        : 'recently'
-      }, refreshing`
+  if (oldTokenset.expires_at === undefined || oldTokenset.expired()) {
+    request.log.trace(oldTokenset.expires_at === undefined
+      ? 'OpenID token missing expires_at, refreshing'
+      : `OpenID token expired ${new Date(oldTokenset.expires_at * 1000).toUTCString()}, refreshing`
     )
     const newTokenset = await client.refresh(oldTokenset, extras)
     const verified = verify !== undefined
