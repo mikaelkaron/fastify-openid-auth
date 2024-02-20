@@ -1,4 +1,4 @@
-import { type FastifyPluginAsync, type RouteHandlerMethod } from 'fastify'
+import { type FastifyPluginAsync, type FastifyPluginOptions, type RouteHandlerMethod } from 'fastify'
 import fp from 'fastify-plugin'
 import { type Client } from 'openid-client'
 import { openIDLoginHandlerFactory, type OpenIDLoginHandlerOptions } from './login.js'
@@ -15,7 +15,7 @@ import {
   type OpenIDVerifyHandlerOptions
 } from './verify.js'
 
-export interface FastifyOpenIDAuthPluginOptions {
+export type FastifyOpenIDAuthPluginOptions = FastifyPluginOptions & {
   decorator: string | symbol
   client: Client
   login?: OpenIDLoginHandlerOptions
@@ -32,29 +32,26 @@ export interface OpenIDAuthHandlers {
 }
 
 export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions> =
-  fp(
-    async (fastify, options) => {
-      const { decorator, client, login, refresh, verify, logout } = options
+  async (fastify, options) => {
+    const { decorator, client, login, refresh, verify, logout } = options
 
-      const openIDAuthHandlers: OpenIDAuthHandlers = {
-        login: openIDLoginHandlerFactory(client, login),
-        refresh: openIDRefreshHandlerFactory(client, refresh),
-        verify: openIDVerifyHandlerFactory(verify),
-        logout: openIDLogoutHandlerFactory(client, logout)
-      }
-
-      fastify.log.trace(
-        `decorating \`fastify[${String(decorator)}]\` with OpenIDAuthHandlers`
-      )
-      fastify.decorate(decorator, openIDAuthHandlers)
-    },
-    {
-      fastify: '4.x',
-      name: 'fastify-openid-auth',
-      decorators: {
-        request: ['session']
-      }
+    const openIDAuthHandlers: OpenIDAuthHandlers = {
+      login: openIDLoginHandlerFactory(client, login),
+      refresh: openIDRefreshHandlerFactory(client, refresh),
+      verify: openIDVerifyHandlerFactory(verify),
+      logout: openIDLogoutHandlerFactory(client, logout)
     }
-  )
 
-export default openIDAuthPlugin
+    fastify.log.trace(
+      `decorating \`fastify[${String(decorator)}]\` with OpenIDAuthHandlers`
+    )
+    fastify.decorate(decorator, openIDAuthHandlers)
+  }
+
+export default fp(openIDAuthPlugin, {
+  fastify: '4.x',
+  name: 'fastify-openid-auth',
+  decorators: {
+    request: ['session']
+  }
+})
