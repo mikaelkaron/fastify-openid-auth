@@ -1,3 +1,20 @@
+# [9.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v8.0.2...v9.0.0) (2024-02-20)
+
+
+### Bug Fixes
+
+* trigger logout redirect without `id_token_hint` regardless of `id_token` presence in `tokenset` ([d9b5f97](https://github.com/mikaelkaron/fastify-openid-auth/commit/d9b5f97d5b1b39ae4da4113d3253b252e80557e2))
+
+
+### Features
+
+* export `openIDAuthPlugin` and `fp(openIDAuthPlugin)` separately for `fastify-plugin@4.5.1` compatibility. ([6899ecb](https://github.com/mikaelkaron/fastify-openid-auth/commit/6899ecbb5ed3280e7a39cb4d8d07c7b20d4563bc))
+
+
+### BREAKING CHANGES
+
+* This changes the default export for the plugin. Should be safe to upgrade for most users that use the `default` export.
+
 ## [8.0.2](https://github.com/mikaelkaron/fastify-openid-auth/compare/v8.0.1...v8.0.2) (2023-08-02)
 
 
