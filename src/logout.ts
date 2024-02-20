@@ -29,17 +29,15 @@ export const openIDLogoutHandlerFactory: OpenIDLogoutHandlerFactory = (
   // #region authentication request
   if (Object.keys(request.query as object).length === 0) {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { id_token, session_state } = tokenset
-    if (id_token !== undefined) {
-      request.log.trace('OpenID logout redirect')
-      return await reply.redirect(
-        client.endSessionUrl({
-          id_token_hint: id_token,
-          state: session_state,
-          ...parameters
-        })
-      )
-    }
+    const { id_token: id_token_hint, session_state: state } = tokenset
+    request.log.trace('OpenID logout redirect')
+    return await reply.redirect(
+      client.endSessionUrl({
+        id_token_hint,
+        state,
+        ...parameters
+      })
+    )
   }
   // #endregion
 
