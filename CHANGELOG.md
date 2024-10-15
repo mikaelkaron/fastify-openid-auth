@@ -1,3 +1,15 @@
+# [10.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v9.0.0...v10.0.0) (2024-10-15)
+
+
+### Build System
+
+* **packaging:** bump `fastify` and `fastify-plugin` to 5.x ([9a1000f](https://github.com/mikaelkaron/fastify-openid-auth/commit/9a1000fecdd513fadd0a989c47ef4a255e45fdcf))
+
+
+### BREAKING CHANGES
+
+* **packaging:** We now require fastify `5.x` to use this plugin
+
 # [9.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v8.0.2...v9.0.0) (2024-02-20)
 
 
