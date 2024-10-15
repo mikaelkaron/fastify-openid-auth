@@ -57,7 +57,7 @@ export const openIDAuthPlugin: FastifyPluginAsync<
 }
 
 export default fp(openIDAuthPlugin, {
-  fastify: '4.x',
+  fastify: '5.x',
   name: 'fastify-openid-auth',
   decorators: {
     request: ['session']

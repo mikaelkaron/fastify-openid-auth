@@ -43,14 +43,14 @@
     "@semantic-release/release-notes-generator": "^14.0.1",
     "@tsconfig/node20": "^20.1.2",
     "@types/node": "^20.11.19",
-    "fastify": "^4.26.1",
+    "fastify": "^5.0.0",
     "semantic-release": "^24.1.2",
     "shx": "^0.3.4",
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "@fastify/error": "^3.4.1",
-    "fastify-plugin": "^4.5.1",
+    "@fastify/error": "^4.0.0",
+    "fastify-plugin": "^5.0.1",
     "jose": "^4.15.9",
     "openid-client": "^5.7.0"
   }
