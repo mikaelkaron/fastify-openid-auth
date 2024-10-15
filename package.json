@@ -39,24 +39,24 @@
   "homepage": "https://github.com/mikaelkaron/fastify-openid-auth#readme",
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^9.2.6",
-    "@semantic-release/npm": "^11.0.2",
-    "@semantic-release/release-notes-generator": "^12.1.0",
+    "@semantic-release/github": "^11.0.0",
+    "@semantic-release/npm": "^12.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.1",
     "@tsconfig/node20": "^20.1.2",
     "@types/node": "^20.11.19",
     "eslint": "^8.56.0",
     "eslint-config-standard-with-typescript": "^43.0.1",
     "fastify": "^4.26.1",
-    "semantic-release": "^23.0.2",
+    "semantic-release": "^24.1.2",
     "shx": "^0.3.4",
-    "typescript": "^5.3.3"
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "@fastify/error": "^3.4.1",
     "fastify-plugin": "^4.5.1",
-    "jose": "^4.15.4",
-    "openid-client": "^5.6.4"
+    "jose": "^4.15.9",
+    "openid-client": "^5.7.0"
   }
 }
