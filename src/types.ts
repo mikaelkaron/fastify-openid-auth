@@ -1,10 +1,10 @@
-import { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
-import { type JWTVerifyResult } from 'jose'
-import { type TokenSetParameters } from 'openid-client'
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
+import type { JWTVerifyResult } from 'jose'
+import type { TokenSetParameters } from 'openid-client'
 
 export type OpenIDTokens = keyof Pick<
-TokenSetParameters,
-'id_token' | 'access_token' | 'refresh_token'
+  TokenSetParameters,
+  'id_token' | 'access_token' | 'refresh_token'
 >
 
 export type OpenIDJWTVerified = {

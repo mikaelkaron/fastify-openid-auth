@@ -17,20 +17,16 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc --declaration -p tsconfig.json",
     "clean": "shx rm -rf dist",
-    "lint": "eslint src/**/*.ts",
+    "check": "biome check",
+    "lint": "biome lint",
     "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mikaelkaron/fastify-openid-auth.git"
   },
-  "files": [
-    "dist/"
-  ],
-  "keywords": [
-    "fastify",
-    "openid"
-  ],
+  "files": ["dist/"],
+  "keywords": ["fastify", "openid"],
   "author": "Mikael Karon <mikael@karon.se>",
   "license": "MIT",
   "bugs": {
@@ -38,6 +34,7 @@
   },
   "homepage": "https://github.com/mikaelkaron/fastify-openid-auth#readme",
   "devDependencies": {
+    "@biomejs/biome": "^1.9.3",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -46,8 +43,6 @@
     "@semantic-release/release-notes-generator": "^14.0.1",
     "@tsconfig/node20": "^20.1.2",
     "@types/node": "^20.11.19",
-    "eslint": "^8.56.0",
-    "eslint-config-standard-with-typescript": "^43.0.1",
     "fastify": "^4.26.1",
     "semantic-release": "^24.1.2",
     "shx": "^0.3.4",

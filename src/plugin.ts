@@ -1,18 +1,25 @@
-import { type FastifyPluginAsync, type FastifyPluginOptions, type RouteHandlerMethod } from 'fastify'
+import type {
+  FastifyPluginAsync,
+  FastifyPluginOptions,
+  RouteHandlerMethod
+} from 'fastify'
 import fp from 'fastify-plugin'
-import { type Client } from 'openid-client'
-import { openIDLoginHandlerFactory, type OpenIDLoginHandlerOptions } from './login.js'
+import type { Client } from 'openid-client'
 import {
-  openIDLogoutHandlerFactory,
-  type OpenIDLogoutHandlerOptions
+  type OpenIDLoginHandlerOptions,
+  openIDLoginHandlerFactory
+} from './login.js'
+import {
+  type OpenIDLogoutHandlerOptions,
+  openIDLogoutHandlerFactory
 } from './logout.js'
 import {
-  openIDRefreshHandlerFactory,
-  type OpenIDRefreshHandlerOptions
+  type OpenIDRefreshHandlerOptions,
+  openIDRefreshHandlerFactory
 } from './refresh.js'
 import {
-  openIDVerifyHandlerFactory,
-  type OpenIDVerifyHandlerOptions
+  type OpenIDVerifyHandlerOptions,
+  openIDVerifyHandlerFactory
 } from './verify.js'
 
 export type FastifyOpenIDAuthPluginOptions = FastifyPluginOptions & {
@@ -31,22 +38,23 @@ export interface OpenIDAuthHandlers {
   logout: RouteHandlerMethod
 }
 
-export const openIDAuthPlugin: FastifyPluginAsync<FastifyOpenIDAuthPluginOptions> =
-  async (fastify, options) => {
-    const { decorator, client, login, refresh, verify, logout } = options
+export const openIDAuthPlugin: FastifyPluginAsync<
+  FastifyOpenIDAuthPluginOptions
+> = async (fastify, options) => {
+  const { decorator, client, login, refresh, verify, logout } = options
 
-    const openIDAuthHandlers: OpenIDAuthHandlers = {
-      login: openIDLoginHandlerFactory(client, login),
-      refresh: openIDRefreshHandlerFactory(client, refresh),
-      verify: openIDVerifyHandlerFactory(verify),
-      logout: openIDLogoutHandlerFactory(client, logout)
-    }
-
-    fastify.log.trace(
-      `decorating \`fastify[${String(decorator)}]\` with OpenIDAuthHandlers`
-    )
-    fastify.decorate(decorator, openIDAuthHandlers)
+  const openIDAuthHandlers: OpenIDAuthHandlers = {
+    login: openIDLoginHandlerFactory(client, login),
+    refresh: openIDRefreshHandlerFactory(client, refresh),
+    verify: openIDVerifyHandlerFactory(verify),
+    logout: openIDLogoutHandlerFactory(client, logout)
   }
+
+  fastify.log.trace(
+    `decorating \`fastify[${String(decorator)}]\` with OpenIDAuthHandlers`
+  )
+  fastify.decorate(decorator, openIDAuthHandlers)
+}
 
 export default fp(openIDAuthPlugin, {
   fastify: '4.x',

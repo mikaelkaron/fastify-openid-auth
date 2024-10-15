@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import createError from '@fastify/error'
-import { type RouteHandlerMethod } from 'fastify'
+import type { RouteHandlerMethod } from 'fastify'
 import openIDClient, {
   type AuthorizationParameters,
   type CallbackExtras,
@@ -8,8 +8,8 @@ import openIDClient, {
   type Issuer,
   type OpenIDCallbackChecks
 } from 'openid-client'
-import { type OpenIDWriteTokens } from './types.js'
-import { openIDJWTVerify, type OpenIDVerifyOptions } from './verify.js'
+import type { OpenIDWriteTokens } from './types.js'
+import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -24,6 +24,7 @@ declare module 'fastify' {
   }
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: User can supply `any` type in the app
 export type SessionData = Record<string, any>
 
 export interface OpenIDLoginHandlerOptions {
@@ -89,11 +90,11 @@ const resolveSupportedMethod = (issuer: Issuer): string => {
 
   if (supportedMethods === false || supportedMethods.includes('S256')) {
     return 'S256'
-  } else if (supportedMethods.includes('plain')) {
-    return 'plain'
-  } else {
-    throw new SupportedMethodError()
   }
+  if (supportedMethods.includes('plain')) {
+    return 'plain'
+  }
+  throw new SupportedMethodError()
 }
 
 const resolveSessionKey = (issuer: Issuer): string => {
@@ -124,7 +125,7 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
 
   const { verify, extras, write } = { ...options }
 
-  return async function openIDLoginHandler (request, reply) {
+  return async function openIDLoginHandler(request, reply) {
     const callbackParams = client.callbackParams(request.raw)
 
     // #region authentication request
@@ -175,8 +176,7 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
     // #endregion
 
     // #region authentication response
-    const callbackChecks: OpenIDCallbackChecks =
-      request.session.get(sessionKey)
+    const callbackChecks: OpenIDCallbackChecks = request.session.get(sessionKey)
     if (
       callbackChecks === undefined ||
       Object.keys(callbackChecks).length === 0
@@ -192,9 +192,8 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
       callbackChecks,
       extras
     )
-    const verified = verify !== undefined
-      ? await openIDJWTVerify(tokenset, verify)
-      : undefined
+    const verified =
+      verify !== undefined ? await openIDJWTVerify(tokenset, verify) : undefined
     request.log.trace('OpenID login callback')
     return await write?.call(this, request, reply, tokenset, verified)
     // #endregion
