@@ -25,13 +25,8 @@
     "type": "git",
     "url": "git+https://github.com/mikaelkaron/fastify-openid-auth.git"
   },
-  "files": [
-    "dist/"
-  ],
-  "keywords": [
-    "fastify",
-    "openid"
-  ],
+  "files": ["dist/"],
+  "keywords": ["fastify", "openid"],
   "author": "Mikael Karon <mikael@karon.se>",
   "license": "MIT",
   "bugs": {
@@ -39,19 +34,19 @@
   },
   "homepage": "https://github.com/mikaelkaron/fastify-openid-auth#readme",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.3",
+    "@biomejs/biome": "^1.9.4",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^11.0.0",
+    "@semantic-release/github": "^11.0.1",
     "@semantic-release/npm": "^12.0.1",
-    "@semantic-release/release-notes-generator": "^14.0.1",
-    "@tsconfig/node20": "^20.1.2",
-    "@types/node": "^20.11.19",
-    "fastify": "^5.0.0",
-    "semantic-release": "^24.1.2",
+    "@semantic-release/release-notes-generator": "^14.0.2",
+    "@tsconfig/node22": "^22.0.0",
+    "@types/node": "^22.10.2",
+    "fastify": "^5.2.0",
+    "semantic-release": "^24.2.0",
     "shx": "^0.3.4",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.2"
   },
   "dependencies": {
     "@fastify/error": "^4.0.0",
