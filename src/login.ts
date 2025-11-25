@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import createError from '@fastify/error'
-import type { RouteHandlerMethod } from 'fastify'
+import type { FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify'
 import openIDClient, {
   type AuthorizationParameters,
   type CallbackExtras,
@@ -28,7 +28,7 @@ declare module 'fastify' {
 export type SessionData = Record<string, any>
 
 export interface OpenIDLoginHandlerOptions {
-  parameters?: AuthorizationParameters
+  parameters?: AuthorizationParameters | ((request: FastifyRequest, reply: FastifyReply) => AuthorizationParameters)
   extras?: CallbackExtras
   usePKCE?: boolean | 'plain' | 'S256'
   sessionKey?: string
@@ -108,10 +108,6 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
   client,
   options
 ) => {
-  const redirect_uri =
-    options?.parameters?.redirect_uri !== undefined
-      ? options.parameters.redirect_uri
-      : resolveRedirectUri(client)
   const sessionKey =
     options?.sessionKey !== undefined
       ? options.sessionKey
@@ -126,20 +122,25 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
   const { verify, extras, write } = { ...options }
 
   return async function openIDLoginHandler(request, reply) {
+    const params = typeof options?.parameters === 'function' ? options.parameters(request, reply) : options?.parameters 
+      const redirect_uri =
+    params?.redirect_uri !== undefined
+      ? params.redirect_uri
+      : resolveRedirectUri(client)
     const callbackParams = client.callbackParams(request.raw)
 
     // #region authentication request
     if (Object.keys(callbackParams).length === 0) {
       const response_type =
-        options?.parameters?.response_type !== undefined
-          ? options.parameters.response_type
+        params?.response_type !== undefined
+          ? params.response_type
           : resolveResponseType(client)
       const parameters = {
         scope: 'openid',
         state: generators.random(),
         redirect_uri,
         response_type,
-        ...options?.parameters
+        ...params
       }
       if (
         parameters.nonce === undefined &&
