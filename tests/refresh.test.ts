@@ -1,12 +1,12 @@
-import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert'
+import { after, before, describe, it } from 'node:test'
 import type { Client } from 'openid-client'
-import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
+import { openIDRefreshHandlerFactory } from '../src/refresh.js'
 import { getTestKeys } from './fixtures/keys.ts'
-import { createTokenSet, createExpiredTokenSet } from './fixtures/tokens.ts'
+import { type TestProvider, createTestProvider } from './fixtures/provider.ts'
+import { createExpiredTokenSet, createTokenSet } from './fixtures/tokens.ts'
 import { createTestClient } from './helpers/client.ts'
 import { createTestFastify } from './helpers/fastify.ts'
-import { openIDRefreshHandlerFactory } from '../src/refresh.js'
 
 describe('openIDRefreshHandlerFactory', () => {
   let provider: TestProvider

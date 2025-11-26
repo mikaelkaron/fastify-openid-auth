@@ -1,13 +1,16 @@
-import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert'
+import { after, before, describe, it } from 'node:test'
 import Fastify from 'fastify'
 import type { Client } from 'openid-client'
-import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
+import plugin, {
+  openIDAuthPlugin,
+  type OpenIDAuthHandlers
+} from '../src/plugin.js'
 import { getTestKeys } from './fixtures/keys.ts'
+import { type TestProvider, createTestProvider } from './fixtures/provider.ts'
 import { createTokenSet } from './fixtures/tokens.ts'
 import { createTestClient } from './helpers/client.ts'
 import { createMockSession } from './helpers/fastify.ts'
-import plugin, { openIDAuthPlugin, type OpenIDAuthHandlers } from '../src/plugin.js'
 
 describe('openIDAuthPlugin', () => {
   let provider: TestProvider
@@ -67,7 +70,8 @@ describe('openIDAuthPlugin', () => {
 
     // Check that the decorator was added
     assert.ok((fastify as unknown as { openid: OpenIDAuthHandlers }).openid)
-    const handlers = (fastify as unknown as { openid: OpenIDAuthHandlers }).openid
+    const handlers = (fastify as unknown as { openid: OpenIDAuthHandlers })
+      .openid
     assert.ok(typeof handlers.login === 'function')
     assert.ok(typeof handlers.verify === 'function')
     assert.ok(typeof handlers.refresh === 'function')
@@ -116,7 +120,11 @@ describe('openIDAuthPlugin', () => {
     await fastify.ready()
 
     // Check that the symbol decorator was added
-    assert.ok((fastify as unknown as Record<symbol, OpenIDAuthHandlers>)[decoratorSymbol])
+    assert.ok(
+      (fastify as unknown as Record<symbol, OpenIDAuthHandlers>)[
+        decoratorSymbol
+      ]
+    )
 
     await fastify.close()
   })

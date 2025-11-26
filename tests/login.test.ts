@@ -1,15 +1,15 @@
-import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert'
-import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
-import { createTestClient } from './helpers/client.ts'
-import { createMockSession, createTestFastify } from './helpers/fastify.ts'
+import { after, before, describe, it } from 'node:test'
+import type { Client } from 'openid-client'
 import {
-  openIDLoginHandlerFactory,
   SessionKeyError,
   SessionValueError,
-  SupportedMethodError
+  SupportedMethodError,
+  openIDLoginHandlerFactory
 } from '../src/login.ts'
-import type { Client } from 'openid-client'
+import { type TestProvider, createTestProvider } from './fixtures/provider.ts'
+import { createTestClient } from './helpers/client.ts'
+import { createMockSession, createTestFastify } from './helpers/fastify.ts'
 
 describe('openIDLoginHandlerFactory', () => {
   let provider: TestProvider
@@ -113,7 +113,8 @@ describe('openIDLoginHandlerFactory', () => {
       const handler = openIDLoginHandlerFactory(client, {
         parameters: (request) => ({
           scope: 'openid',
-          state: (request.query as { customState?: string }).customState ?? 'default'
+          state:
+            (request.query as { customState?: string }).customState ?? 'default'
         })
       })
 
@@ -153,7 +154,9 @@ describe('openIDLoginHandlerFactory', () => {
 
         // Session should have code_verifier stored
         const sessionKey = 'oidc:localhost'
-        const callbackChecks = session.get(sessionKey) as { code_verifier?: string }
+        const callbackChecks = session.get(sessionKey) as {
+          code_verifier?: string
+        }
         assert.ok(callbackChecks.code_verifier)
 
         await fastify.close()

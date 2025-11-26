@@ -5,44 +5,49 @@
  * This file is type-checked but not executed.
  */
 
-import type { FastifyInstance, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify'
-import type { Client, TokenSetParameters } from 'openid-client'
+import type {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  RouteHandlerMethod
+} from 'fastify'
 import type { JWTVerifyGetKey, KeyLike } from 'jose'
+import type { Client, TokenSetParameters } from 'openid-client'
 
 // Test login exports
 import {
-  openIDLoginHandlerFactory,
+  type AuthorizationParametersFunction,
+  type OpenIDLoginHandlerFactory,
+  type OpenIDLoginHandlerOptions,
+  type SessionData,
   SessionKeyError,
   SessionValueError,
   SupportedMethodError,
-  type OpenIDLoginHandlerFactory,
-  type OpenIDLoginHandlerOptions,
-  type AuthorizationParametersFunction,
-  type SessionData
+  openIDLoginHandlerFactory
 } from '../../src/login.js'
 
 // Test logout exports
 import {
-  openIDLogoutHandlerFactory,
   type OpenIDLogoutHandlerFactory,
-  type OpenIDLogoutHandlerOptions
+  type OpenIDLogoutHandlerOptions,
+  openIDLogoutHandlerFactory
 } from '../../src/logout.js'
 
 // Test refresh exports
 import {
-  openIDRefreshHandlerFactory,
   type OpenIDRefreshHandlerFactory,
-  type OpenIDRefreshHandlerOptions
+  type OpenIDRefreshHandlerOptions,
+  openIDRefreshHandlerFactory
 } from '../../src/refresh.js'
 
 // Test verify exports
 import {
-  openIDJWTVerify,
-  openIDVerifyHandlerFactory,
   type OpenIDJWTVerify,
   type OpenIDVerifyHandlerFactory,
   type OpenIDVerifyHandlerOptions,
-  type OpenIDVerifyOptions
+  type OpenIDVerifyOptions,
+  openIDJWTVerify,
+  openIDVerifyHandlerFactory
 } from '../../src/verify.js'
 
 // Test plugin exports
@@ -55,9 +60,9 @@ import type {
 
 // Test types exports
 import type {
-  OpenIDTokens,
   OpenIDJWTVerified,
   OpenIDReadTokens,
+  OpenIDTokens,
   OpenIDWriteTokens
 } from '../../src/types.js'
 
@@ -70,13 +75,19 @@ import * as allExports from '../../src/index.js'
 // Login handler factory should return RouteHandlerMethod
 declare const client: Client
 const loginHandler: RouteHandlerMethod = openIDLoginHandlerFactory(client)
-const loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(client, {
-  usePKCE: 'S256',
-  sessionKey: 'test'
-})
+const loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(
+  client,
+  {
+    usePKCE: 'S256',
+    sessionKey: 'test'
+  }
+)
 
 // Authorization parameters function type
-const authParamsFunc: AuthorizationParametersFunction = async (request, reply) => ({
+const authParamsFunc: AuthorizationParametersFunction = async (
+  request,
+  reply
+) => ({
   scope: 'openid profile'
 })
 
@@ -90,17 +101,17 @@ const verifyOptions: OpenIDVerifyOptions = {
 // Verify handler factory should return RouteHandlerMethod
 const verifyHandler: RouteHandlerMethod = openIDVerifyHandlerFactory({
   ...verifyOptions,
-  read: async () => ({} as TokenSetParameters)
+  read: async () => ({}) as TokenSetParameters
 })
 
 // Refresh handler factory should return RouteHandlerMethod
 const refreshHandler: RouteHandlerMethod = openIDRefreshHandlerFactory(client, {
-  read: async () => ({} as TokenSetParameters)
+  read: async () => ({}) as TokenSetParameters
 })
 
 // Logout handler factory should return RouteHandlerMethod
 const logoutHandler: RouteHandlerMethod = openIDLogoutHandlerFactory(client, {
-  read: async () => ({} as TokenSetParameters)
+  read: async () => ({}) as TokenSetParameters
 })
 
 // Error classes should be constructable
@@ -110,7 +121,8 @@ const supportedMethodError = new SupportedMethodError()
 
 // Plugin exports should be functions
 if (typeof plugin !== 'function') throw new Error('plugin should be a function')
-if (typeof openIDAuthPlugin !== 'function') throw new Error('openIDAuthPlugin should be a function')
+if (typeof openIDAuthPlugin !== 'function')
+  throw new Error('openIDAuthPlugin should be a function')
 
 // OpenIDAuthHandlers type check
 const handlers: OpenIDAuthHandlers = {
@@ -126,13 +138,13 @@ const pluginOptions: FastifyOpenIDAuthPluginOptions = {
   client,
   verify: {
     ...verifyOptions,
-    read: async () => ({} as TokenSetParameters)
+    read: async () => ({}) as TokenSetParameters
   },
   refresh: {
-    read: async () => ({} as TokenSetParameters)
+    read: async () => ({}) as TokenSetParameters
   },
   logout: {
-    read: async () => ({} as TokenSetParameters)
+    read: async () => ({}) as TokenSetParameters
   }
 }
 
@@ -142,11 +154,21 @@ const tokenType2: OpenIDTokens = 'access_token'
 const tokenType3: OpenIDTokens = 'refresh_token'
 
 // Read/Write tokens function types
-const readTokens: OpenIDReadTokens = async function (this: FastifyInstance, request, reply) {
+const readTokens: OpenIDReadTokens = async function (
+  this: FastifyInstance,
+  request,
+  reply
+) {
   return {} as TokenSetParameters
 }
 
-const writeTokens: OpenIDWriteTokens = async function (this: FastifyInstance, request, reply, tokenset, verified) {
+const writeTokens: OpenIDWriteTokens = async function (
+  this: FastifyInstance,
+  request,
+  reply,
+  tokenset,
+  verified
+) {
   // void return
 }
 
@@ -154,10 +176,14 @@ const writeTokens: OpenIDWriteTokens = async function (this: FastifyInstance, re
 const pluginExport: typeof plugin = defaultExport
 
 // Runtime check that all exports exist
-if (!allExports.openIDLoginHandlerFactory) throw new Error('Missing openIDLoginHandlerFactory')
-if (!allExports.openIDVerifyHandlerFactory) throw new Error('Missing openIDVerifyHandlerFactory')
-if (!allExports.openIDRefreshHandlerFactory) throw new Error('Missing openIDRefreshHandlerFactory')
-if (!allExports.openIDLogoutHandlerFactory) throw new Error('Missing openIDLogoutHandlerFactory')
+if (!allExports.openIDLoginHandlerFactory)
+  throw new Error('Missing openIDLoginHandlerFactory')
+if (!allExports.openIDVerifyHandlerFactory)
+  throw new Error('Missing openIDVerifyHandlerFactory')
+if (!allExports.openIDRefreshHandlerFactory)
+  throw new Error('Missing openIDRefreshHandlerFactory')
+if (!allExports.openIDLogoutHandlerFactory)
+  throw new Error('Missing openIDLogoutHandlerFactory')
 if (!allExports.openIDAuthPlugin) throw new Error('Missing openIDAuthPlugin')
 
 console.log('Type tests passed')

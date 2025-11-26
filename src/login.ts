@@ -27,10 +27,13 @@ declare module 'fastify' {
 // biome-ignore lint/suspicious/noExplicitAny: User can supply `any` type in the app
 export type SessionData = Record<string, any>
 
-export type AuthorizationParametersFunction = (request: FastifyRequest, reply: FastifyReply) => AuthorizationParameters | PromiseLike<AuthorizationParameters>
+export type AuthorizationParametersFunction = (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => AuthorizationParameters | PromiseLike<AuthorizationParameters>
 
 export interface OpenIDLoginHandlerOptions {
-  parameters?: AuthorizationParameters | AuthorizationParametersFunction
+  parameters?: AuthorizationParameters | AuthorizationParametersFunction
   extras?: CallbackExtras
   usePKCE?: boolean | 'plain' | 'S256'
   sessionKey?: string
@@ -124,12 +127,14 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
   const { verify, extras, write } = { ...options }
 
   return async function openIDLoginHandler(request, reply) {
-    const params = typeof options?.parameters === 'function'
-      ? await options.parameters(request, reply)
-      : options?.parameters 
-    const redirect_uri = params?.redirect_uri !== undefined
-      ? params.redirect_uri
-      : resolveRedirectUri(client)
+    const params =
+      typeof options?.parameters === 'function'
+        ? await options.parameters(request, reply)
+        : options?.parameters
+    const redirect_uri =
+      params?.redirect_uri !== undefined
+        ? params.redirect_uri
+        : resolveRedirectUri(client)
     const callbackParams = client.callbackParams(request.raw)
 
     // #region authentication request

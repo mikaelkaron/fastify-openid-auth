@@ -1,4 +1,4 @@
-import { Issuer, type Client } from 'openid-client'
+import { type Client, Issuer } from 'openid-client'
 
 export interface CreateClientOptions {
   issuer: string

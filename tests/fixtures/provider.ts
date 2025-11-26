@@ -1,6 +1,6 @@
 import type { Server } from 'node:http'
 import Provider from 'oidc-provider'
-import { getTestKeys, getPrivateJWKS } from './keys.ts'
+import { getPrivateJWKS, getTestKeys } from './keys.ts'
 
 export interface TestProvider {
   issuer: string

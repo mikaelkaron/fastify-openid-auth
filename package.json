@@ -27,13 +27,8 @@
     "type": "git",
     "url": "git+https://github.com/mikaelkaron/fastify-openid-auth.git"
   },
-  "files": [
-    "dist/"
-  ],
-  "keywords": [
-    "fastify",
-    "openid"
-  ],
+  "files": ["dist/"],
+  "keywords": ["fastify", "openid"],
   "author": "Mikael Karon <mikael@karon.se>",
   "license": "MIT",
   "bugs": {

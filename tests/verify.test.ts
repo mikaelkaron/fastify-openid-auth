@@ -1,14 +1,18 @@
-import { describe, it } from 'node:test'
 import assert from 'node:assert'
+import { describe, it } from 'node:test'
 import type { TokenSetParameters } from 'openid-client'
-import { getTestKeys } from './fixtures/keys.ts'
-import { createIdToken, createAccessToken, createTokenSet } from './fixtures/tokens.ts'
-import { createTestFastify } from './helpers/fastify.ts'
 import {
+  type OpenIDVerifyOptions,
   openIDJWTVerify,
-  openIDVerifyHandlerFactory,
-  type OpenIDVerifyOptions
+  openIDVerifyHandlerFactory
 } from '../src/verify.js'
+import { getTestKeys } from './fixtures/keys.ts'
+import {
+  createAccessToken,
+  createIdToken,
+  createTokenSet
+} from './fixtures/tokens.ts'
+import { createTestFastify } from './helpers/fastify.ts'
 
 describe('openIDJWTVerify', () => {
   it('should verify id_token successfully', async () => {
@@ -262,7 +266,10 @@ describe('openIDVerifyHandlerFactory', () => {
 
     assert.strictEqual(response.statusCode, 200)
     assert.ok(receivedVerified)
-    const verified = receivedVerified as { id_token?: unknown; access_token?: unknown }
+    const verified = receivedVerified as {
+      id_token?: unknown
+      access_token?: unknown
+    }
     assert.ok(verified.id_token)
     assert.ok(verified.access_token)
 
