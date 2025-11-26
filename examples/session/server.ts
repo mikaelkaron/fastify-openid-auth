@@ -1,5 +1,5 @@
-import Fastify from 'fastify'
 import secureSession from '@fastify/secure-session'
+import Fastify from 'fastify'
 import { createRemoteJWKSet } from 'jose'
 import openIDAuthPlugin, {
   discovery,
@@ -7,13 +7,24 @@ import openIDAuthPlugin, {
   type OpenIDReadTokens,
   type OpenIDWriteTokens,
   type TokenEndpointResponse
-} from 'fastify-openid-auth'
+} from '../../src/index.ts'
 
 // Environment variables
-const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_REDIRECT_URI, SESSION_KEY } =
-  process.env
+const {
+  OIDC_ISSUER,
+  OIDC_CLIENT_ID,
+  OIDC_CLIENT_SECRET,
+  OIDC_REDIRECT_URI,
+  SESSION_KEY
+} = process.env
 
-if (!OIDC_ISSUER || !OIDC_CLIENT_ID || !OIDC_CLIENT_SECRET || !OIDC_REDIRECT_URI || !SESSION_KEY) {
+if (
+  !OIDC_ISSUER ||
+  !OIDC_CLIENT_ID ||
+  !OIDC_CLIENT_SECRET ||
+  !OIDC_REDIRECT_URI ||
+  !SESSION_KEY
+) {
   console.error('Missing required environment variables')
   process.exit(1)
 }
@@ -52,7 +63,10 @@ const read: OpenIDReadTokens = (request) => {
 
 // Write tokens to secure session
 const write: OpenIDWriteTokens = (request, _reply, tokenset) => {
-  request.log.debug({ hasTokens: Object.keys(tokenset).length > 0 }, 'Writing tokens to session')
+  request.log.debug(
+    { hasTokens: Object.keys(tokenset).length > 0 },
+    'Writing tokens to session'
+  )
   if (Object.keys(tokenset).length > 0) {
     request.session.set(TOKENS_KEY, tokenset)
   } else {
@@ -135,7 +149,11 @@ async function main() {
       return {
         message: 'You are logged in (tokens stored in encrypted session)',
         tokens: formatTokens(tokens),
-        endpoints: { refresh: '/refresh', logout: '/logout', protected: '/protected' }
+        endpoints: {
+          refresh: '/refresh',
+          logout: '/logout',
+          protected: '/protected'
+        }
       }
     }
     return {
@@ -150,13 +168,23 @@ async function main() {
 
   fastify.get('/callback', { preHandler: [login, verify] }, async (request) => {
     const tokens = request.session.get(TOKENS_KEY)
-    return { message: 'Login successful', tokens: tokens && formatTokens(tokens) }
+    return {
+      message: 'Login successful',
+      tokens: tokens && formatTokens(tokens)
+    }
   })
 
-  fastify.get('/refresh', { preHandler: [refresh, verify] }, async (request) => {
-    const tokens = request.session.get(TOKENS_KEY)
-    return { message: 'Tokens refreshed', tokens: tokens && formatTokens(tokens) }
-  })
+  fastify.get(
+    '/refresh',
+    { preHandler: [refresh, verify] },
+    async (request) => {
+      const tokens = request.session.get(TOKENS_KEY)
+      return {
+        message: 'Tokens refreshed',
+        tokens: tokens && formatTokens(tokens)
+      }
+    }
+  )
 
   fastify.get('/logout', { preHandler: logout }, async () => {
     return { message: 'Logged out' }
@@ -164,7 +192,10 @@ async function main() {
 
   fastify.get('/protected', { preHandler: verify }, async (request) => {
     const tokens = request.session.get(TOKENS_KEY)
-    return { message: 'You have access!', tokens: tokens && formatTokens(tokens) }
+    return {
+      message: 'You have access!',
+      tokens: tokens && formatTokens(tokens)
+    }
   })
 
   // Start server

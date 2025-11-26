@@ -5,13 +5,18 @@ import openIDAuthPlugin, {
   type OpenIDAuthHandlers,
   type OpenIDReadTokens,
   type TokenEndpointResponse
-} from 'fastify-openid-auth'
+} from '../../src/index.ts'
 
 // Environment variables
 const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_REDIRECT_URI } =
   process.env
 
-if (!OIDC_ISSUER || !OIDC_CLIENT_ID || !OIDC_CLIENT_SECRET || !OIDC_REDIRECT_URI) {
+if (
+  !OIDC_ISSUER ||
+  !OIDC_CLIENT_ID ||
+  !OIDC_CLIENT_SECRET ||
+  !OIDC_REDIRECT_URI
+) {
   console.error('Missing required environment variables')
   process.exit(1)
 }
@@ -119,7 +124,8 @@ async function main() {
       endpoints: {
         login: 'GET /login - Redirects to IdP, returns tokens as JSON',
         callback: 'GET /callback - OAuth callback (handled automatically)',
-        protected: 'GET /protected - Requires Authorization: Bearer <access_token>',
+        protected:
+          'GET /protected - Requires Authorization: Bearer <access_token>',
         refresh: 'POST /refresh - Refresh tokens (send refresh_token in body)',
         logout: 'GET /logout - End session'
       }

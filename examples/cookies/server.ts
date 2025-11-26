@@ -1,5 +1,5 @@
-import Fastify from 'fastify'
 import cookie from '@fastify/cookie'
+import Fastify from 'fastify'
 import { createRemoteJWKSet } from 'jose'
 import openIDAuthPlugin, {
   discovery,
@@ -7,13 +7,18 @@ import openIDAuthPlugin, {
   type OpenIDReadTokens,
   type OpenIDWriteTokens,
   type TokenEndpointResponse
-} from 'fastify-openid-auth'
+} from '../../src/index.ts'
 
 // Environment variables
 const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_REDIRECT_URI } =
   process.env
 
-if (!OIDC_ISSUER || !OIDC_CLIENT_ID || !OIDC_CLIENT_SECRET || !OIDC_REDIRECT_URI) {
+if (
+  !OIDC_ISSUER ||
+  !OIDC_CLIENT_ID ||
+  !OIDC_CLIENT_SECRET ||
+  !OIDC_REDIRECT_URI
+) {
   console.error('Missing required environment variables')
   process.exit(1)
 }
@@ -53,7 +58,10 @@ const read: OpenIDReadTokens = (request) => {
     refresh_token: request.cookies[REFRESH_TOKEN_COOKIE],
     id_token: request.cookies[ID_TOKEN_COOKIE]
   } as TokenEndpointResponse
-  request.log.debug({ hasAccessToken: !!tokenset.access_token }, 'Read tokens from cookies')
+  request.log.debug(
+    { hasAccessToken: !!tokenset.access_token },
+    'Read tokens from cookies'
+  )
   return tokenset
 }
 
@@ -147,7 +155,11 @@ async function main() {
     if (hasToken) {
       return {
         message: 'You are logged in (tokens stored in cookies)',
-        endpoints: { refresh: '/refresh', logout: '/logout', protected: '/protected' }
+        endpoints: {
+          refresh: '/refresh',
+          logout: '/logout',
+          protected: '/protected'
+        }
       }
     }
     return {
