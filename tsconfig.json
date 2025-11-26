@@ -5,7 +5,8 @@
     "outDir": "dist",
     "target": "ESNext",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "skipLibCheck": true
   },
   "include": ["src"],
   "exclude": ["tests", "node_modules", "dist"]

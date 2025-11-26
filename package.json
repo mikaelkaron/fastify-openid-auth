@@ -21,7 +21,8 @@
     "clean": "shx rm -rf dist",
     "check": "biome check",
     "lint": "biome lint",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "example:basic": "node --env-file=examples/keycloak/basic/.env.local --import tsx examples/keycloak/basic/server.ts"
   },
   "repository": {
     "type": "git",
@@ -42,6 +43,9 @@
   "homepage": "https://github.com/mikaelkaron/fastify-openid-auth#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.3.7",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/secure-session": "^8.2.0",
+    "@fastify/session": "^11.0.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -53,6 +57,7 @@
     "@types/oidc-provider": "^8.5.2",
     "fastify": "^5.2.0",
     "oidc-provider": "^9.1.1",
+    "pino-pretty": "^13.0.0",
     "semantic-release": "^24.2.0",
     "shx": "^0.3.4",
     "tsx": "^4.19.2",
