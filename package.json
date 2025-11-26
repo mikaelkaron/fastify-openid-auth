@@ -14,7 +14,7 @@
     "./verify": "./dist/verify.js"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test 'tests/**/*.test.ts'",
+    "test": "node --import tsx --test 'tests/**/*.test.ts'",
     "test:types": "tsc --noEmit -p tests/types/tsconfig.json",
     "typecheck": "tsc --noEmit",
     "build": "tsc --declaration -p tsconfig.json",
@@ -55,6 +55,7 @@
     "oidc-provider": "^9.1.1",
     "semantic-release": "^24.2.0",
     "shx": "^0.3.4",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
   "dependencies": {

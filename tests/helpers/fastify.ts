@@ -37,10 +37,11 @@ export async function createTestFastify(
   })
 
   // Decorate request with mock session
-  fastify.decorateRequest('session', null)
-
-  fastify.addHook('onRequest', async (request) => {
-    request.session = session
+  // Use getter pattern for request decoration
+  fastify.decorateRequest('session', {
+    getter() {
+      return session
+    }
   })
 
   return fastify

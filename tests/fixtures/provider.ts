@@ -1,6 +1,6 @@
 import type { Server } from 'node:http'
 import Provider from 'oidc-provider'
-import { getTestKeys } from './keys.js'
+import { getTestKeys, getPrivateJWKS } from './keys.ts'
 
 export interface TestProvider {
   issuer: string
@@ -9,15 +9,11 @@ export interface TestProvider {
   stop: () => Promise<void>
 }
 
+import type { ClientMetadata } from 'oidc-provider'
+
 export interface TestProviderOptions {
   port?: number
-  clients?: Array<{
-    client_id: string
-    client_secret?: string
-    redirect_uris: string[]
-    response_types?: string[]
-    grant_types?: string[]
-  }>
+  clients?: ClientMetadata[]
 }
 
 export async function createTestProvider(
@@ -38,7 +34,7 @@ export async function createTestProvider(
         grant_types: ['authorization_code', 'refresh_token']
       }
     ],
-    jwks: { keys: [keys.jwk] },
+    jwks: getPrivateJWKS(keys),
     features: {
       devInteractions: { enabled: false }
     },

@@ -1,6 +1,6 @@
 import { SignJWT } from 'jose'
 import type { TokenSetParameters } from 'openid-client'
-import { getTestKeys } from './keys.js'
+import { getTestKeys } from './keys.ts'
 
 export interface CreateTokenOptions {
   issuer: string
@@ -20,7 +20,7 @@ export async function createIdToken(
     nonce: options.nonce,
     auth_time: now
   })
-    .setProtectedHeader({ alg: 'RS256', kid: keys.jwk.kid })
+    .setProtectedHeader({ alg: 'RS256', kid: keys.publicJwk.kid })
     .setIssuer(options.issuer)
     .setSubject(options.subject ?? 'test-user')
     .setAudience(options.clientId)
@@ -38,7 +38,7 @@ export async function createAccessToken(
   return new SignJWT({
     scope: 'openid'
   })
-    .setProtectedHeader({ alg: 'RS256', kid: keys.jwk.kid })
+    .setProtectedHeader({ alg: 'RS256', kid: keys.publicJwk.kid })
     .setIssuer(options.issuer)
     .setSubject(options.subject ?? 'test-user')
     .setAudience(options.clientId)
