@@ -4,7 +4,7 @@ import type {
   RouteHandlerMethod
 } from 'fastify'
 import fp from 'fastify-plugin'
-import type { Client } from 'openid-client'
+import type { Configuration } from 'openid-client'
 import {
   type OpenIDLoginHandlerOptions,
   openIDLoginHandlerFactory
@@ -24,7 +24,7 @@ import {
 
 export type FastifyOpenIDAuthPluginOptions = FastifyPluginOptions & {
   decorator: string | symbol
-  client: Client
+  config: Configuration
   login?: OpenIDLoginHandlerOptions
   verify: OpenIDVerifyHandlerOptions
   refresh: OpenIDRefreshHandlerOptions
@@ -41,13 +41,13 @@ export interface OpenIDAuthHandlers {
 export const openIDAuthPlugin: FastifyPluginAsync<
   FastifyOpenIDAuthPluginOptions
 > = async (fastify, options) => {
-  const { decorator, client, login, refresh, verify, logout } = options
+  const { decorator, config, login, refresh, verify, logout } = options
 
   const openIDAuthHandlers: OpenIDAuthHandlers = {
-    login: openIDLoginHandlerFactory(client, login),
-    refresh: openIDRefreshHandlerFactory(client, refresh),
+    login: openIDLoginHandlerFactory(config, login),
+    refresh: openIDRefreshHandlerFactory(config, refresh),
     verify: openIDVerifyHandlerFactory(verify),
-    logout: openIDLogoutHandlerFactory(client, logout)
+    logout: openIDLogoutHandlerFactory(config, logout)
   }
 
   fastify.log.trace(

@@ -1,11 +1,13 @@
 import type { RouteHandlerMethod } from 'fastify'
 import {
+  type CryptoKey,
+  type JWK,
   type JWTVerifyGetKey,
   type JWTVerifyOptions,
   jwtVerify,
-  type KeyLike
+  type KeyObject
 } from 'jose'
-import type { TokenSetParameters } from 'openid-client'
+import type { TokenEndpointResponse } from 'openid-client'
 import type {
   OpenIDJWTVerified,
   OpenIDReadTokens,
@@ -15,12 +17,12 @@ import type {
 
 export interface OpenIDVerifyOptions {
   options?: JWTVerifyOptions
-  key: JWTVerifyGetKey | KeyLike | Uint8Array
+  key: JWTVerifyGetKey | CryptoKey | KeyObject | JWK | Uint8Array
   tokens: OpenIDTokens[]
 }
 
 export type OpenIDJWTVerify = (
-  tokenset: TokenSetParameters,
+  tokenset: TokenEndpointResponse,
   options: OpenIDVerifyOptions
 ) => Promise<OpenIDJWTVerified>
 
@@ -31,12 +33,12 @@ export const openIDJWTVerify: OpenIDJWTVerify = async (
   const verified: OpenIDJWTVerified = {}
   for (const token of tokens) {
     const jwt = tokenset[token]
-    if (jwt !== undefined) {
-      const result =
-        key instanceof Function
+    if (typeof jwt === 'string') {
+      // TypeScript requires separate calls for function vs static key overloads
+      verified[token] =
+        typeof key === 'function'
           ? await jwtVerify(jwt, key, options)
           : await jwtVerify(jwt, key, options)
-      verified[token] = result
     }
   }
   return verified

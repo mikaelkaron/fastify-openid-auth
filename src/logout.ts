@@ -1,7 +1,9 @@
 import type { RouteHandlerMethod } from 'fastify'
-import type { Client, EndSessionParameters } from 'openid-client'
+import { buildEndSessionUrl, type Configuration } from 'openid-client'
 import type { OpenIDReadTokens, OpenIDWriteTokens } from './types.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
+
+export type EndSessionParameters = Record<string, string>
 
 export interface OpenIDLogoutHandlerOptions {
   parameters?: EndSessionParameters
@@ -11,12 +13,12 @@ export interface OpenIDLogoutHandlerOptions {
 }
 
 export type OpenIDLogoutHandlerFactory = (
-  client: Client,
+  config: Configuration,
   options: OpenIDLogoutHandlerOptions
 ) => RouteHandlerMethod
 
 export const openIDLogoutHandlerFactory: OpenIDLogoutHandlerFactory = (
-  client,
+  config,
   { parameters, verify, read, write }
 ) =>
   async function openIDLogoutHandler(request, reply) {
@@ -24,16 +26,16 @@ export const openIDLogoutHandlerFactory: OpenIDLogoutHandlerFactory = (
 
     // #region authentication request
     if (Object.keys(request.query as object).length === 0) {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { id_token: id_token_hint, session_state: state } = tokenset
+      const { id_token: id_token_hint } = tokenset
+      const endSessionParams: Record<string, string> = {
+        ...parameters
+      }
+      if (id_token_hint !== undefined) {
+        endSessionParams.id_token_hint = id_token_hint
+      }
+      const endSessionUrl = buildEndSessionUrl(config, endSessionParams)
       request.log.trace('OpenID logout redirect')
-      return await reply.redirect(
-        client.endSessionUrl({
-          id_token_hint,
-          state,
-          ...parameters
-        })
-      )
+      return await reply.redirect(endSessionUrl.href)
     }
     // #endregion
 

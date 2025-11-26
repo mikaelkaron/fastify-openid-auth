@@ -1,20 +1,20 @@
 import assert from 'node:assert'
 import { after, before, describe, it } from 'node:test'
-import type { Client } from 'openid-client'
+import type { Configuration } from 'openid-client'
 import { openIDLogoutHandlerFactory } from '../src/logout.js'
 import { getTestKeys } from './fixtures/keys.ts'
 import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
 import { createTokenSet } from './fixtures/tokens.ts'
-import { createTestClient } from './helpers/client.ts'
+import { createTestConfig } from './helpers/config.ts'
 import { createTestFastify } from './helpers/fastify.ts'
 
 describe('openIDLogoutHandlerFactory', () => {
   let provider: TestProvider
-  let client: Client
+  let config: Configuration
 
   before(async () => {
     provider = await createTestProvider({ port: 3003 })
-    client = await createTestClient({
+    config = await createTestConfig({
       issuer: provider.issuer,
       clientId: 'test-client',
       clientSecret: 'test-secret'
@@ -34,7 +34,7 @@ describe('openIDLogoutHandlerFactory', () => {
 
       const fastify = await createTestFastify()
 
-      const handler = openIDLogoutHandlerFactory(client, {
+      const handler = openIDLogoutHandlerFactory(config, {
         read: () => tokenset
       })
 
@@ -62,7 +62,7 @@ describe('openIDLogoutHandlerFactory', () => {
 
       const fastify = await createTestFastify()
 
-      const handler = openIDLogoutHandlerFactory(client, {
+      const handler = openIDLogoutHandlerFactory(config, {
         parameters: {
           post_logout_redirect_uri: 'http://localhost:8080/logged-out'
         },
@@ -93,7 +93,7 @@ describe('openIDLogoutHandlerFactory', () => {
 
       let readCalled = false
 
-      const handler = openIDLogoutHandlerFactory(client, {
+      const handler = openIDLogoutHandlerFactory(config, {
         read: () => {
           readCalled = true
           return tokenset
@@ -126,7 +126,7 @@ describe('openIDLogoutHandlerFactory', () => {
       let writeCalled = false
       let receivedTokenset: unknown
 
-      const handler = openIDLogoutHandlerFactory(client, {
+      const handler = openIDLogoutHandlerFactory(config, {
         read: () => tokenset,
         write: async (_request, reply, ts) => {
           writeCalled = true
@@ -162,7 +162,7 @@ describe('openIDLogoutHandlerFactory', () => {
 
       let receivedVerified: unknown
 
-      const handler = openIDLogoutHandlerFactory(client, {
+      const handler = openIDLogoutHandlerFactory(config, {
         read: () => tokenset,
         verify: {
           key: keys.publicKey,
@@ -202,7 +202,7 @@ describe('openIDLogoutHandlerFactory', () => {
 
       const fastify = await createTestFastify()
 
-      const handler = openIDLogoutHandlerFactory(client, {
+      const handler = openIDLogoutHandlerFactory(config, {
         read: () => tokenset
       })
 

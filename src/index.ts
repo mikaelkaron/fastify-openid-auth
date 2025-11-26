@@ -1,3 +1,6 @@
+// Re-export key types from openid-client for convenience
+export type { Configuration, TokenEndpointResponse } from 'openid-client'
+export { discovery } from 'openid-client'
 export * from './login.js'
 export * from './logout.js'
 export * from './plugin.js'

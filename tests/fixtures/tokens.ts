@@ -1,5 +1,5 @@
 import { SignJWT } from 'jose'
-import type { TokenSetParameters } from 'openid-client'
+import type { TokenEndpointResponse } from 'openid-client'
 import { getTestKeys } from './keys.ts'
 
 export interface CreateTokenOptions {
@@ -54,21 +54,21 @@ export async function createRefreshToken(): Promise<string> {
 
 export async function createTokenSet(
   options: CreateTokenOptions
-): Promise<TokenSetParameters> {
+): Promise<TokenEndpointResponse> {
   const now = Math.floor(Date.now() / 1000)
 
   return {
     id_token: await createIdToken(options),
     access_token: await createAccessToken(options),
     refresh_token: await createRefreshToken(),
-    token_type: 'Bearer',
+    token_type: 'bearer',
     expires_at: now + (options.expiresIn ?? 3600)
   }
 }
 
 export async function createExpiredTokenSet(
   options: CreateTokenOptions
-): Promise<TokenSetParameters> {
+): Promise<TokenEndpointResponse> {
   const expiredOptions = { ...options, expiresIn: -3600 }
   const now = Math.floor(Date.now() / 1000)
 
@@ -76,7 +76,7 @@ export async function createExpiredTokenSet(
     id_token: await createIdToken(expiredOptions),
     access_token: await createAccessToken(expiredOptions),
     refresh_token: await createRefreshToken(),
-    token_type: 'Bearer',
+    token_type: 'bearer',
     expires_at: now - 3600
   }
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { after, before, describe, it } from 'node:test'
 import Fastify from 'fastify'
-import type { Client } from 'openid-client'
+import type { Configuration } from 'openid-client'
 import plugin, {
   type OpenIDAuthHandlers,
   openIDAuthPlugin
@@ -9,16 +9,16 @@ import plugin, {
 import { getTestKeys } from './fixtures/keys.ts'
 import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
 import { createTokenSet } from './fixtures/tokens.ts'
-import { createTestClient } from './helpers/client.ts'
+import { createTestConfig } from './helpers/config.ts'
 import { createMockSession } from './helpers/fastify.ts'
 
 describe('openIDAuthPlugin', () => {
   let provider: TestProvider
-  let client: Client
+  let config: Configuration
 
   before(async () => {
     provider = await createTestProvider({ port: 3004 })
-    client = await createTestClient({
+    config = await createTestConfig({
       issuer: provider.issuer,
       clientId: 'test-client',
       clientSecret: 'test-secret'
@@ -48,7 +48,7 @@ describe('openIDAuthPlugin', () => {
 
     await fastify.register(plugin, {
       decorator: 'openid',
-      client,
+      config,
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
@@ -99,7 +99,7 @@ describe('openIDAuthPlugin', () => {
 
     await fastify.register(plugin, {
       decorator: decoratorSymbol,
-      client,
+      config,
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
@@ -157,7 +157,7 @@ describe('openIDAuthPlugin', () => {
 
     await fastify.register(plugin, {
       decorator: 'openid',
-      client,
+      config,
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
