@@ -2,8 +2,8 @@ import type { RouteHandlerMethod } from 'fastify'
 import {
   type JWTVerifyGetKey,
   type JWTVerifyOptions,
-  type KeyLike,
-  jwtVerify
+  jwtVerify,
+  type KeyLike
 } from 'jose'
 import type { TokenSetParameters } from 'openid-client'
 import type {

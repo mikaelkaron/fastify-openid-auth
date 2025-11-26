@@ -3,11 +3,11 @@ import { after, before, describe, it } from 'node:test'
 import Fastify from 'fastify'
 import type { Client } from 'openid-client'
 import plugin, {
-  openIDAuthPlugin,
-  type OpenIDAuthHandlers
+  type OpenIDAuthHandlers,
+  openIDAuthPlugin
 } from '../src/plugin.js'
 import { getTestKeys } from './fixtures/keys.ts'
-import { type TestProvider, createTestProvider } from './fixtures/provider.ts'
+import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
 import { createTokenSet } from './fixtures/tokens.ts'
 import { createTestClient } from './helpers/client.ts'
 import { createMockSession } from './helpers/fastify.ts'

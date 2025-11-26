@@ -3,7 +3,7 @@ import { after, before, describe, it } from 'node:test'
 import type { Client } from 'openid-client'
 import { openIDRefreshHandlerFactory } from '../src/refresh.js'
 import { getTestKeys } from './fixtures/keys.ts'
-import { type TestProvider, createTestProvider } from './fixtures/provider.ts'
+import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
 import { createExpiredTokenSet, createTokenSet } from './fixtures/tokens.ts'
 import { createTestClient } from './helpers/client.ts'
 import { createTestFastify } from './helpers/fastify.ts'
@@ -26,7 +26,7 @@ describe('openIDRefreshHandlerFactory', () => {
   })
 
   it('should not refresh when token is not expired', async () => {
-    const keys = await getTestKeys()
+    const _keys = await getTestKeys()
     const tokenset = await createTokenSet({
       issuer: provider.issuer,
       clientId: 'test-client'

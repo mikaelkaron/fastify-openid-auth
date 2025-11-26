@@ -5,77 +5,48 @@
  * This file is type-checked but not executed.
  */
 
-import type {
-  FastifyInstance,
-  FastifyReply,
-  FastifyRequest,
-  RouteHandlerMethod
-} from 'fastify'
-import type { JWTVerifyGetKey, KeyLike } from 'jose'
+import type { FastifyInstance, RouteHandlerMethod } from 'fastify'
+import type { KeyLike } from 'jose'
 import type { Client, TokenSetParameters } from 'openid-client'
-
+import * as allExports from '../../src/index.js'
+// Test index exports (re-exports everything)
+import { default as defaultExport } from '../../src/index.js'
 // Test login exports
 import {
   type AuthorizationParametersFunction,
-  type OpenIDLoginHandlerFactory,
-  type OpenIDLoginHandlerOptions,
-  type SessionData,
+  openIDLoginHandlerFactory,
   SessionKeyError,
   SessionValueError,
-  SupportedMethodError,
-  openIDLoginHandlerFactory
+  SupportedMethodError
 } from '../../src/login.js'
-
 // Test logout exports
-import {
-  type OpenIDLogoutHandlerFactory,
-  type OpenIDLogoutHandlerOptions,
-  openIDLogoutHandlerFactory
-} from '../../src/logout.js'
-
-// Test refresh exports
-import {
-  type OpenIDRefreshHandlerFactory,
-  type OpenIDRefreshHandlerOptions,
-  openIDRefreshHandlerFactory
-} from '../../src/refresh.js'
-
-// Test verify exports
-import {
-  type OpenIDJWTVerify,
-  type OpenIDVerifyHandlerFactory,
-  type OpenIDVerifyHandlerOptions,
-  type OpenIDVerifyOptions,
-  openIDJWTVerify,
-  openIDVerifyHandlerFactory
-} from '../../src/verify.js'
-
-// Test plugin exports
-import { default as plugin } from '../../src/plugin.js'
-import { openIDAuthPlugin } from '../../src/plugin.js'
+import { openIDLogoutHandlerFactory } from '../../src/logout.js'
 import type {
   FastifyOpenIDAuthPluginOptions,
   OpenIDAuthHandlers
 } from '../../src/plugin.js'
-
+// Test plugin exports
+import { openIDAuthPlugin, default as plugin } from '../../src/plugin.js'
+// Test refresh exports
+import { openIDRefreshHandlerFactory } from '../../src/refresh.js'
 // Test types exports
 import type {
-  OpenIDJWTVerified,
   OpenIDReadTokens,
   OpenIDTokens,
   OpenIDWriteTokens
 } from '../../src/types.js'
-
-// Test index exports (re-exports everything)
-import { default as defaultExport } from '../../src/index.js'
-import * as allExports from '../../src/index.js'
+// Test verify exports
+import {
+  type OpenIDVerifyOptions,
+  openIDVerifyHandlerFactory
+} from '../../src/verify.js'
 
 // Type assertions
 
 // Login handler factory should return RouteHandlerMethod
 declare const client: Client
 const loginHandler: RouteHandlerMethod = openIDLoginHandlerFactory(client)
-const loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(
+const _loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(
   client,
   {
     usePKCE: 'S256',
@@ -84,9 +55,9 @@ const loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(
 )
 
 // Authorization parameters function type
-const authParamsFunc: AuthorizationParametersFunction = async (
-  request,
-  reply
+const _authParamsFunc: AuthorizationParametersFunction = async (
+  _request,
+  _reply
 ) => ({
   scope: 'openid profile'
 })
@@ -115,9 +86,9 @@ const logoutHandler: RouteHandlerMethod = openIDLogoutHandlerFactory(client, {
 })
 
 // Error classes should be constructable
-const sessionKeyError = new SessionKeyError()
-const sessionValueError = new SessionValueError('key')
-const supportedMethodError = new SupportedMethodError()
+const _sessionKeyError = new SessionKeyError()
+const _sessionValueError = new SessionValueError('key')
+const _supportedMethodError = new SupportedMethodError()
 
 // Plugin exports should be functions
 if (typeof plugin !== 'function') throw new Error('plugin should be a function')
@@ -125,7 +96,7 @@ if (typeof openIDAuthPlugin !== 'function')
   throw new Error('openIDAuthPlugin should be a function')
 
 // OpenIDAuthHandlers type check
-const handlers: OpenIDAuthHandlers = {
+const _handlers: OpenIDAuthHandlers = {
   login: loginHandler,
   verify: verifyHandler,
   refresh: refreshHandler,
@@ -133,7 +104,7 @@ const handlers: OpenIDAuthHandlers = {
 }
 
 // Plugin options type check
-const pluginOptions: FastifyOpenIDAuthPluginOptions = {
+const _pluginOptions: FastifyOpenIDAuthPluginOptions = {
   decorator: 'openid',
   client,
   verify: {
@@ -149,31 +120,31 @@ const pluginOptions: FastifyOpenIDAuthPluginOptions = {
 }
 
 // OpenIDTokens should be a union of token keys
-const tokenType: OpenIDTokens = 'id_token'
-const tokenType2: OpenIDTokens = 'access_token'
-const tokenType3: OpenIDTokens = 'refresh_token'
+const _tokenType: OpenIDTokens = 'id_token'
+const _tokenType2: OpenIDTokens = 'access_token'
+const _tokenType3: OpenIDTokens = 'refresh_token'
 
 // Read/Write tokens function types
-const readTokens: OpenIDReadTokens = async function (
+const _readTokens: OpenIDReadTokens = async function (
   this: FastifyInstance,
-  request,
-  reply
+  _request,
+  _reply
 ) {
   return {} as TokenSetParameters
 }
 
-const writeTokens: OpenIDWriteTokens = async function (
+const _writeTokens: OpenIDWriteTokens = async function (
   this: FastifyInstance,
-  request,
-  reply,
-  tokenset,
-  verified
+  _request,
+  _reply,
+  _tokenset,
+  _verified
 ) {
   // void return
 }
 
 // Default export should be the plugin
-const pluginExport: typeof plugin = defaultExport
+const _pluginExport: typeof plugin = defaultExport
 
 // Runtime check that all exports exist
 if (!allExports.openIDLoginHandlerFactory)

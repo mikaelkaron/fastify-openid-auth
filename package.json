@@ -27,8 +27,13 @@
     "type": "git",
     "url": "git+https://github.com/mikaelkaron/fastify-openid-auth.git"
   },
-  "files": ["dist/"],
-  "keywords": ["fastify", "openid"],
+  "files": [
+    "dist/"
+  ],
+  "keywords": [
+    "fastify",
+    "openid"
+  ],
   "author": "Mikael Karon <mikael@karon.se>",
   "license": "MIT",
   "bugs": {
@@ -36,7 +41,7 @@
   },
   "homepage": "https://github.com/mikaelkaron/fastify-openid-auth#readme",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.3.7",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",

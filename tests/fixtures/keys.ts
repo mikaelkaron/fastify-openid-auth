@@ -1,4 +1,4 @@
-import { type KeyLike, exportJWK, generateKeyPair } from 'jose'
+import { exportJWK, generateKeyPair, type KeyLike } from 'jose'
 
 export interface TestKeys {
   privateKey: KeyLike

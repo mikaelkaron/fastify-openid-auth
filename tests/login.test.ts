@@ -2,12 +2,12 @@ import assert from 'node:assert'
 import { after, before, describe, it } from 'node:test'
 import type { Client } from 'openid-client'
 import {
+  openIDLoginHandlerFactory,
   SessionKeyError,
   SessionValueError,
-  SupportedMethodError,
-  openIDLoginHandlerFactory
+  SupportedMethodError
 } from '../src/login.ts'
-import { type TestProvider, createTestProvider } from './fixtures/provider.ts'
+import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
 import { createTestClient } from './helpers/client.ts'
 import { createMockSession, createTestFastify } from './helpers/fastify.ts'
 
@@ -257,13 +257,13 @@ describe('openIDLoginHandlerFactory', () => {
       const session = createMockSession()
       const fastify = await createTestFastify({ session })
 
-      let writeCalled = false
-      let receivedTokenset: unknown
+      let _writeCalled = false
+      let _receivedTokenset: unknown
 
       const handler = openIDLoginHandlerFactory(client, {
         write: async (_request, reply, tokenset) => {
-          writeCalled = true
-          receivedTokenset = tokenset
+          _writeCalled = true
+          _receivedTokenset = tokenset
           return reply.send({ success: true })
         }
       })
