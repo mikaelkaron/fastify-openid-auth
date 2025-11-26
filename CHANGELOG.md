@@ -1,3 +1,11 @@
+# [10.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v10.0.0...v10.1.0) (2025-11-26)
+
+
+### Features
+
+* add async support for parameter function ([c1b1055](https://github.com/mikaelkaron/fastify-openid-auth/commit/c1b1055efba88448099f4810ceee766a7c2d8448))
+* extend parameters with function for OpenIDLoginHandlerOptions ([5e330dd](https://github.com/mikaelkaron/fastify-openid-auth/commit/5e330dd176bc6736847edab9cbc9ccfd5e63ea98))
+
 # [10.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v9.0.0...v10.0.0) (2024-10-15)
 
 
