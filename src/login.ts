@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import createError from '@fastify/error'
 import type { FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify'
-import openIDClient, {
-  type AuthorizationParameters,
-  type CallbackExtras,
-  type Client,
-  type Issuer,
-  type OpenIDCallbackChecks
+import {
+  authorizationCodeGrant,
+  buildAuthorizationUrl,
+  type Configuration,
+  calculatePKCECodeChallenge,
+  randomNonce,
+  randomPKCECodeVerifier,
+  randomState
 } from 'openid-client'
 import type { OpenIDWriteTokens } from './types.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
@@ -17,9 +18,7 @@ declare module 'fastify' {
   }
 
   type Session<T = SessionData> = Partial<T> & {
-    // eslint-disable-next-line @typescript-eslint/method-signature-style
     get<Key extends keyof T>(key: Key): T[Key] | undefined
-    // eslint-disable-next-line @typescript-eslint/method-signature-style
     set<Key extends keyof T>(key: Key, value: T[Key] | undefined): void
   }
 }
@@ -27,14 +26,21 @@ declare module 'fastify' {
 // biome-ignore lint/suspicious/noExplicitAny: User can supply `any` type in the app
 export type SessionData = Record<string, any>
 
+export type AuthorizationParameters = Record<string, string>
+
 export type AuthorizationParametersFunction = (
   request: FastifyRequest,
   reply: FastifyReply
 ) => AuthorizationParameters | PromiseLike<AuthorizationParameters>
 
+export interface CallbackChecks {
+  state?: string
+  nonce?: string
+  pkceCodeVerifier?: string
+}
+
 export interface OpenIDLoginHandlerOptions {
   parameters?: AuthorizationParameters | AuthorizationParametersFunction
-  extras?: CallbackExtras
   usePKCE?: boolean | 'plain' | 'S256'
   sessionKey?: string
   verify?: OpenIDVerifyOptions
@@ -42,13 +48,13 @@ export interface OpenIDLoginHandlerOptions {
 }
 
 export type OpenIDLoginHandlerFactory = (
-  client: Client,
+  config: Configuration,
   options?: OpenIDLoginHandlerOptions
 ) => RouteHandlerMethod
 
 export const SessionKeyError = createError(
   'FST_SESSION_KEY',
-  'client must have an issuer with an identifier',
+  'config must have an issuer with an identifier',
   500
 )
 
@@ -64,36 +70,20 @@ export const SupportedMethodError = createError(
   500
 )
 
-const { generators } = openIDClient
-
-const resolveResponseType = (client: Client): string | undefined => {
-  const { length, 0: value } = client.metadata.response_types ?? []
-
-  if (length === 1) {
-    return value
+const resolveRedirectUri = (config: Configuration): string | undefined => {
+  const redirectUris = config.clientMetadata().redirect_uris
+  if (!Array.isArray(redirectUris) || redirectUris.length !== 1) {
+    return undefined
   }
-
-  return undefined
+  const value = redirectUris[0]
+  return typeof value === 'string' ? value : undefined
 }
 
-const resolveRedirectUri = (client: Client): string | undefined => {
-  const { length, 0: value } = client.metadata.redirect_uris ?? []
+const resolveSupportedMethod = (config: Configuration): string => {
+  const supportedMethods =
+    config.serverMetadata().code_challenge_methods_supported
 
-  if (length === 1) {
-    return value
-  }
-
-  return undefined
-}
-
-const resolveSupportedMethod = (issuer: Issuer): string => {
-  const supportedMethods = Array.isArray(
-    issuer.code_challenge_methods_supported
-  )
-    ? issuer.code_challenge_methods_supported
-    : false
-
-  if (supportedMethods === false || supportedMethods.includes('S256')) {
+  if (supportedMethods === undefined || supportedMethods.includes('S256')) {
     return 'S256'
   }
   if (supportedMethods.includes('plain')) {
@@ -102,90 +92,95 @@ const resolveSupportedMethod = (issuer: Issuer): string => {
   throw new SupportedMethodError()
 }
 
-const resolveSessionKey = (issuer: Issuer): string => {
-  if (issuer.metadata.issuer === undefined) {
+const resolveSessionKey = (config: Configuration): string => {
+  const issuer = config.serverMetadata().issuer
+  if (issuer === undefined) {
     throw new SessionKeyError()
   }
-  return `oidc:${new URL(issuer.metadata.issuer).hostname}`
+  return `oidc:${new URL(issuer).hostname}`
+}
+
+const resolveParameters = async (
+  parameters:
+    | AuthorizationParameters
+    | AuthorizationParametersFunction
+    | undefined,
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<AuthorizationParameters | undefined> => {
+  if (typeof parameters === 'function') {
+    return await parameters(request, reply)
+  }
+  return parameters
 }
 
 export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
-  client,
+  config,
   options
 ) => {
-  const sessionKey =
-    options?.sessionKey !== undefined
-      ? options.sessionKey
-      : resolveSessionKey(client.issuer)
+  const sessionKey = options?.sessionKey ?? resolveSessionKey(config)
   const usePKCE =
     options?.usePKCE !== undefined
       ? options.usePKCE === true
-        ? resolveSupportedMethod(client.issuer)
+        ? resolveSupportedMethod(config)
         : options.usePKCE
       : false
 
-  const { verify, extras, write } = { ...options }
+  const { verify, write } = { ...options }
 
   return async function openIDLoginHandler(request, reply) {
-    const params =
-      typeof options?.parameters === 'function'
-        ? await options.parameters(request, reply)
-        : options?.parameters
-    const redirect_uri =
-      params?.redirect_uri !== undefined
-        ? params.redirect_uri
-        : resolveRedirectUri(client)
-    const callbackParams = client.callbackParams(request.raw)
+    const params = await resolveParameters(options?.parameters, request, reply)
+    const redirect_uri = params?.redirect_uri ?? resolveRedirectUri(config)
+
+    // Check if this is a callback (has code or error in query)
+    const query = request.query as Record<string, string>
+    const isCallback = query.code !== undefined || query.error !== undefined
 
     // #region authentication request
-    if (Object.keys(callbackParams).length === 0) {
-      const response_type =
-        params?.response_type !== undefined
-          ? params.response_type
-          : resolveResponseType(client)
-      const parameters = {
+    if (!isCallback) {
+      const state = randomState()
+      const nonce = randomNonce()
+
+      const parameters: Record<string, string> = {
         scope: 'openid',
-        state: generators.random(),
-        redirect_uri,
-        response_type,
+        state,
+        nonce,
+        redirect_uri: redirect_uri ?? '',
+        response_type: 'code',
         ...params
       }
-      if (
-        parameters.nonce === undefined &&
-        parameters.response_type === 'code'
-      ) {
-        parameters.nonce = generators.random()
-      }
-      const callbackChecks: OpenIDCallbackChecks = (({
-        nonce,
-        state,
-        max_age,
-        response_type
-      }) => ({ nonce, state, max_age, response_type }))(parameters)
-      if (usePKCE !== false && parameters.response_type === 'code') {
-        const verifier = generators.random()
 
-        callbackChecks.code_verifier = verifier
+      const callbackChecks: CallbackChecks = {
+        state,
+        nonce
+      }
+
+      if (usePKCE !== false) {
+        const verifier = randomPKCECodeVerifier()
+        callbackChecks.pkceCodeVerifier = verifier
 
         switch (usePKCE) {
           case 'S256':
-            parameters.code_challenge = generators.codeChallenge(verifier)
+            parameters.code_challenge =
+              await calculatePKCECodeChallenge(verifier)
             parameters.code_challenge_method = 'S256'
             break
           case 'plain':
             parameters.code_challenge = verifier
+            parameters.code_challenge_method = 'plain'
             break
         }
       }
 
       request.session.set(sessionKey, callbackChecks)
+      const authUrl = buildAuthorizationUrl(config, parameters)
       request.log.trace('OpenID login redirect')
-      return await reply.redirect(client.authorizationUrl(parameters))
+      return await reply.redirect(authUrl.href)
     }
     // #endregion
 
     // #region authentication response
-    const callbackChecks: OpenIDCallbackChecks = request.session.get(sessionKey)
+    const callbackChecks: CallbackChecks = request.session.get(sessionKey)
     if (
       callbackChecks === undefined ||
       Object.keys(callbackChecks).length === 0
@@ -195,12 +190,17 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
 
     request.session.set(sessionKey, undefined)
 
-    const tokenset = await client.callback(
-      redirect_uri,
-      callbackParams,
-      callbackChecks,
-      extras
+    // Build the current URL from the request
+    const currentUrl = new URL(
+      `${request.protocol}://${request.hostname}${request.url}`
     )
+
+    const tokenset = await authorizationCodeGrant(config, currentUrl, {
+      pkceCodeVerifier: callbackChecks.pkceCodeVerifier,
+      expectedState: callbackChecks.state,
+      expectedNonce: callbackChecks.nonce
+    })
+
     const verified =
       verify !== undefined ? await openIDJWTVerify(tokenset, verify) : undefined
     request.log.trace('OpenID login callback')

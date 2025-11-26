@@ -1,33 +1,49 @@
 import type { RouteHandlerMethod } from 'fastify'
-import { type Client, type RefreshExtras, TokenSet } from 'openid-client'
+import { type Configuration, refreshTokenGrant } from 'openid-client'
 import type { OpenIDReadTokens, OpenIDWriteTokens } from './types.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
 
 export interface OpenIDRefreshHandlerOptions {
-  extras?: RefreshExtras
   verify?: OpenIDVerifyOptions
   read: OpenIDReadTokens
   write?: OpenIDWriteTokens
 }
 
 export type OpenIDRefreshHandlerFactory = (
-  client: Client,
+  config: Configuration,
   options: OpenIDRefreshHandlerOptions
 ) => RouteHandlerMethod
 
+const isTokenExpired = (expiresAt: number | undefined): boolean => {
+  if (expiresAt === undefined) {
+    return true
+  }
+  return Date.now() >= expiresAt * 1000
+}
+
 export const openIDRefreshHandlerFactory: OpenIDRefreshHandlerFactory = (
-  client,
-  { extras, verify, read, write }
+  config,
+  { verify, read, write }
 ) =>
   async function openIDRefreshHandler(request, reply) {
-    const oldTokenset = new TokenSet(await read.call(this, request, reply))
-    if (oldTokenset.expires_at === undefined || oldTokenset.expired()) {
+    const oldTokens = await read.call(this, request, reply)
+    // expires_at comes from the index signature and may be JsonValue,
+    // but we only care if it's a number
+    const expiresAt =
+      typeof oldTokens.expires_at === 'number'
+        ? oldTokens.expires_at
+        : undefined
+    if (isTokenExpired(expiresAt)) {
       request.log.trace(
-        oldTokenset.expires_at === undefined
+        expiresAt === undefined
           ? 'OpenID token missing expires_at, refreshing'
-          : `OpenID token expired ${new Date(oldTokenset.expires_at * 1000).toUTCString()}, refreshing`
+          : `OpenID token expired ${new Date(expiresAt * 1000).toUTCString()}, refreshing`
       )
-      const newTokenset = await client.refresh(oldTokenset, extras)
+      const refreshToken = oldTokens.refresh_token
+      if (refreshToken === undefined) {
+        throw new Error('Cannot refresh: no refresh_token available')
+      }
+      const newTokenset = await refreshTokenGrant(config, refreshToken)
       const verified =
         verify !== undefined
           ? await openIDJWTVerify(newTokenset, verify)

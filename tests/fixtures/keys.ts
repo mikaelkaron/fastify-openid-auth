@@ -1,8 +1,13 @@
-import { exportJWK, generateKeyPair, type KeyLike } from 'jose'
+import {
+  type CryptoKey,
+  exportJWK,
+  generateKeyPair,
+  type KeyObject
+} from 'jose'
 
 export interface TestKeys {
-  privateKey: KeyLike
-  publicKey: KeyLike
+  privateKey: CryptoKey | KeyObject
+  publicKey: CryptoKey | KeyObject
   privateJwk: JsonWebKey & { kid: string; alg: string; use: string }
   publicJwk: JsonWebKey & { kid: string; alg: string; use: string }
 }
@@ -14,7 +19,9 @@ export async function getTestKeys(): Promise<TestKeys> {
     return cachedKeys
   }
 
-  const { privateKey, publicKey } = await generateKeyPair('RS256')
+  const { privateKey, publicKey } = await generateKeyPair('RS256', {
+    extractable: true
+  })
   const privateJwk = await exportJWK(privateKey)
   const publicJwk = await exportJWK(publicKey)
 

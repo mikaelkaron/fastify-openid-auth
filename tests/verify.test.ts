@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
-import type { TokenSetParameters } from 'openid-client'
+import type { TokenEndpointResponse } from 'openid-client'
 import {
   type OpenIDVerifyOptions,
   openIDJWTVerify,
@@ -21,7 +21,11 @@ describe('openIDJWTVerify', () => {
     const clientId = 'test-client'
 
     const idToken = await createIdToken({ issuer, clientId })
-    const tokenset: TokenSetParameters = { id_token: idToken }
+    const tokenset: TokenEndpointResponse = {
+      id_token: idToken,
+      access_token: 'dummy',
+      token_type: 'bearer'
+    }
 
     const verifyOptions: OpenIDVerifyOptions = {
       key: keys.publicKey,
@@ -45,7 +49,10 @@ describe('openIDJWTVerify', () => {
     const clientId = 'test-client'
 
     const accessToken = await createAccessToken({ issuer, clientId })
-    const tokenset: TokenSetParameters = { access_token: accessToken }
+    const tokenset: TokenEndpointResponse = {
+      access_token: accessToken,
+      token_type: 'bearer'
+    }
 
     const verifyOptions: OpenIDVerifyOptions = {
       key: keys.publicKey,
@@ -90,11 +97,18 @@ describe('openIDJWTVerify', () => {
     const clientId = 'test-client'
 
     const idToken = await createIdToken({ issuer, clientId })
-    const tokenset: TokenSetParameters = { id_token: idToken }
+    // TokenEndpointResponse requires access_token but we want to test skipping
+    // refresh_token which is optional
+    const tokenset: TokenEndpointResponse = {
+      id_token: idToken,
+      access_token: await createAccessToken({ issuer, clientId }),
+      token_type: 'bearer'
+      // refresh_token is intentionally missing
+    }
 
     const verifyOptions: OpenIDVerifyOptions = {
       key: keys.publicKey,
-      tokens: ['id_token', 'access_token', 'refresh_token'],
+      tokens: ['id_token', 'refresh_token'],
       options: {
         issuer,
         audience: clientId
@@ -104,7 +118,7 @@ describe('openIDJWTVerify', () => {
     const result = await openIDJWTVerify(tokenset, verifyOptions)
 
     assert.ok(result.id_token)
-    assert.strictEqual(result.access_token, undefined)
+    // refresh_token is missing, so it should be undefined
     assert.strictEqual(result.refresh_token, undefined)
   })
 
@@ -116,7 +130,11 @@ describe('openIDJWTVerify', () => {
     // Create a token and tamper with it
     const idToken = await createIdToken({ issuer, clientId })
     const tamperedToken = `${idToken.slice(0, -5)}XXXXX`
-    const tokenset: TokenSetParameters = { id_token: tamperedToken }
+    const tokenset: TokenEndpointResponse = {
+      id_token: tamperedToken,
+      access_token: 'dummy',
+      token_type: 'bearer'
+    }
 
     const verifyOptions: OpenIDVerifyOptions = {
       key: keys.publicKey,
@@ -143,7 +161,11 @@ describe('openIDJWTVerify', () => {
       clientId,
       expiresIn: -3600 // Expired 1 hour ago
     })
-    const tokenset: TokenSetParameters = { id_token: expiredToken }
+    const tokenset: TokenEndpointResponse = {
+      id_token: expiredToken,
+      access_token: 'dummy',
+      token_type: 'bearer'
+    }
 
     const verifyOptions: OpenIDVerifyOptions = {
       key: keys.publicKey,
@@ -166,7 +188,11 @@ describe('openIDJWTVerify', () => {
     const clientId = 'test-client'
 
     const idToken = await createIdToken({ issuer, clientId })
-    const tokenset: TokenSetParameters = { id_token: idToken }
+    const tokenset: TokenEndpointResponse = {
+      id_token: idToken,
+      access_token: 'dummy',
+      token_type: 'bearer'
+    }
 
     const verifyOptions: OpenIDVerifyOptions = {
       key: keys.publicKey,
@@ -189,7 +215,11 @@ describe('openIDJWTVerify', () => {
     const clientId = 'test-client'
 
     const idToken = await createIdToken({ issuer, clientId })
-    const tokenset: TokenSetParameters = { id_token: idToken }
+    const tokenset: TokenEndpointResponse = {
+      id_token: idToken,
+      access_token: 'dummy',
+      token_type: 'bearer'
+    }
 
     const verifyOptions: OpenIDVerifyOptions = {
       key: keys.publicKey,
@@ -212,7 +242,11 @@ describe('openIDJWTVerify', () => {
     const clientId = 'test-client'
 
     const idToken = await createIdToken({ issuer, clientId })
-    const tokenset: TokenSetParameters = { id_token: idToken }
+    const tokenset: TokenEndpointResponse = {
+      id_token: idToken,
+      access_token: 'dummy',
+      token_type: 'bearer'
+    }
 
     // Use a simple key getter function
     const getKey = async () => keys.publicKey
