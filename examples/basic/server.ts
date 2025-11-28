@@ -127,10 +127,11 @@ async function main() {
       key,
       tokens: ['access_token'],
       read,
-      write(_request, _reply, _tokenset, verified) {
+      write(request, reply, tokenset, verified) {
         if (!verified?.access_token) {
           throw new NotAuthenticatedError()
         }
+        return write.call(this, request, reply, tokenset, verified)
       }
     },
     refresh: {
