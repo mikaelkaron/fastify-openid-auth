@@ -5,7 +5,7 @@ import {
   type OpenIDVerifyOptions,
   openIDJWTVerify,
   openIDVerifyHandlerFactory
-} from '../src/verify.js'
+} from '../src/verify.ts'
 import { getTestKeys } from './fixtures/keys.ts'
 import {
   createAccessToken,
@@ -116,9 +116,7 @@ describe('openIDJWTVerify', () => {
     }
 
     const result = await openIDJWTVerify(tokenset, verifyOptions)
-
     assert.ok(result.id_token)
-    // refresh_token is missing, so it should be undefined
     assert.strictEqual(result.refresh_token, undefined)
   })
 
@@ -266,6 +264,68 @@ describe('openIDJWTVerify', () => {
 })
 
 describe('openIDVerifyHandlerFactory', () => {
+  it('should return 401 if required token is missing', async () => {
+    const keys = await getTestKeys()
+    const issuer = 'https://test-issuer.example.com'
+    const clientId = 'test-client'
+
+    // tokenset missing access_token, but with correct token_type type
+    // access_token set to empty string to simulate missing token
+    const tokenset: TokenEndpointResponse = {
+      id_token: 'dummy',
+      access_token: '',
+      token_type: 'bearer' as Lowercase<string>
+    }
+
+    const fastify = await createTestFastify()
+
+    const handler = openIDVerifyHandlerFactory({
+      key: keys.publicKey,
+      tokens: ['access_token'],
+      options: { issuer, audience: clientId },
+      read: () => tokenset
+    })
+
+    fastify.get('/protected', handler)
+    await fastify.ready()
+
+    const response = await fastify.inject({ method: 'GET', url: '/protected' })
+    assert.strictEqual(response.statusCode, 500)
+    assert.match(response.body, /ERR_JWS_INVALID/)
+
+    await fastify.close()
+  })
+
+  it('should return 401 if token verification fails', async () => {
+    const keys = await getTestKeys()
+    const issuer = 'https://test-issuer.example.com'
+    const clientId = 'test-client'
+
+    // tokenset with invalid access_token and correct token_type type
+    const tokenset: TokenEndpointResponse = {
+      access_token: 'invalid.token',
+      token_type: 'bearer' as Lowercase<string>
+    }
+
+    const fastify = await createTestFastify()
+
+    const handler = openIDVerifyHandlerFactory({
+      key: keys.publicKey,
+      tokens: ['access_token'],
+      options: { issuer, audience: clientId },
+      read: () => tokenset
+    })
+
+    fastify.get('/protected', handler)
+    await fastify.ready()
+
+    const response = await fastify.inject({ method: 'GET', url: '/protected' })
+    assert.strictEqual(response.statusCode, 500)
+    // Accept any error message for token verification failure
+    assert.match(response.body, /ERR_JWS_INVALID/)
+
+    await fastify.close()
+  })
   it('should create a handler that verifies tokens', async () => {
     const keys = await getTestKeys()
     const issuer = 'https://test-issuer.example.com'

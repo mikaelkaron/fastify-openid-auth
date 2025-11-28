@@ -24,25 +24,21 @@ export const openIDLogoutHandlerFactory: OpenIDLogoutHandlerFactory = (
   async function openIDLogoutHandler(request, reply) {
     const tokenset = await read.call(this, request, reply)
 
-    // #region authentication request
-    if (Object.keys(request.query as object).length === 0) {
-      const { id_token: id_token_hint } = tokenset
-      const endSessionParams: Record<string, string> = {
-        ...parameters
+    if (parameters?.post_logout_redirect_uri) {
+      const { pathname, search } = new URL(parameters.post_logout_redirect_uri)
+      if (request.url === `${pathname}${search}`) {
+        const verified = verify
+          ? await openIDJWTVerify(tokenset, verify)
+          : undefined
+        return await write?.call(this, request, reply, tokenset, verified)
       }
-      if (id_token_hint !== undefined) {
-        endSessionParams.id_token_hint = id_token_hint
-      }
-      const endSessionUrl = buildEndSessionUrl(config, endSessionParams)
-      request.log.trace('OpenID logout redirect')
-      return await reply.redirect(endSessionUrl.href)
     }
-    // #endregion
 
-    // #region authentication response
-    const verified =
-      verify !== undefined ? await openIDJWTVerify(tokenset, verify) : undefined
-    request.log.trace('OpenID logout callback')
-    return await write?.call(this, request, reply, tokenset, verified)
-    // #endregion
+    const endSessionParams = { ...parameters }
+    const { id_token: id_token_hint } = tokenset
+    if (id_token_hint) {
+      endSessionParams.id_token_hint = id_token_hint
+    }
+    const endSessionUrl = buildEndSessionUrl(config, endSessionParams)
+    return reply.redirect(endSessionUrl.href)
   }
