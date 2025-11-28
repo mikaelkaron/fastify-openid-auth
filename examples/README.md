@@ -47,28 +47,11 @@ node --env-file=examples/cookies/.env.local --import tsx examples/cookies/server
 ```
 
 **Endpoints:**
-- `GET /` - Shows login status
+- `GET /` - API info
 - `GET /login` - Redirects to Keycloak
-- `GET /callback` - OAuth callback
 - `GET /protected` - Requires valid token cookie
 - `GET /refresh` - Refresh tokens
 - `GET /logout` - Clear cookies and end session
-
-### Session (Encrypted Cookie)
-
-Stores all tokens in a single encrypted session cookie using `@fastify/secure-session`.
-
-```bash
-node --env-file=examples/session/.env.local --import tsx examples/session/server.ts
-```
-
-**Endpoints:**
-- `GET /` - Shows login status and token info
-- `GET /login` - Redirects to Keycloak
-- `GET /callback` - OAuth callback
-- `GET /protected` - Requires valid session
-- `GET /refresh` - Refresh tokens
-- `GET /logout` - Clear session and end session
 
 ## Testing
 

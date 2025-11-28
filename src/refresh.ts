@@ -1,7 +1,14 @@
+import { createError } from '@fastify/error'
 import type { RouteHandlerMethod } from 'fastify'
 import { type Configuration, refreshTokenGrant } from 'openid-client'
 import type { OpenIDReadTokens, OpenIDWriteTokens } from './types.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
+
+export const OpenIDRefreshTokenMissingError = createError(
+  'FST_OPENID_REFRESH_TOKEN_MISSING',
+  'no refresh_token available',
+  400
+)
 
 export interface OpenIDRefreshHandlerOptions {
   verify?: OpenIDVerifyOptions
@@ -41,7 +48,7 @@ export const openIDRefreshHandlerFactory: OpenIDRefreshHandlerFactory = (
       )
       const refreshToken = oldTokens.refresh_token
       if (refreshToken === undefined) {
-        throw new Error('Cannot refresh: no refresh_token available')
+        throw new OpenIDRefreshTokenMissingError()
       }
       const newTokenset = await refreshTokenGrant(config, refreshToken)
       const verified =

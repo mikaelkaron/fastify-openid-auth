@@ -1,22 +1,26 @@
+import createError from '@fastify/error'
+import secureSession from '@fastify/secure-session'
 import Fastify from 'fastify'
 import { createRemoteJWKSet } from 'jose'
+import {
+  allowInsecureRequests,
+  type TokenEndpointResponse
+} from 'openid-client'
 import openIDAuthPlugin, {
   discovery,
   type OpenIDAuthHandlers,
   type OpenIDReadTokens,
-  type TokenEndpointResponse
+  type OpenIDWriteTokens
 } from '../../src/index.ts'
 
+const AUTH_HANDLERS = Symbol.for('auth-handlers')
+const AUTH_TOKENS = Symbol.for('auth-tokens')
+
 // Environment variables
-const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_REDIRECT_URI } =
+const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, SESSION_KEY } =
   process.env
 
-if (
-  !OIDC_ISSUER ||
-  !OIDC_CLIENT_ID ||
-  !OIDC_CLIENT_SECRET ||
-  !OIDC_REDIRECT_URI
-) {
+if (!OIDC_ISSUER || !OIDC_CLIENT_ID || !OIDC_CLIENT_SECRET || !SESSION_KEY) {
   console.error('Missing required environment variables')
   process.exit(1)
 }
@@ -25,26 +29,47 @@ if (
 const issuer = OIDC_ISSUER
 const clientId = OIDC_CLIENT_ID
 const clientSecret = OIDC_CLIENT_SECRET
-const redirectUri = OIDC_REDIRECT_URI
-
-// Decorator symbol for auth handlers
-const AUTH_HANDLERS = Symbol('auth-handlers')
+const sessionKey = SESSION_KEY
 
 declare module 'fastify' {
   interface FastifyInstance {
     [AUTH_HANDLERS]: OpenIDAuthHandlers
   }
+
+  interface FastifyRequest {
+    [AUTH_TOKENS]?: Partial<TokenEndpointResponse>
+  }
 }
+
+const NotAuthenticatedError = createError(
+  'FST_UNAUTHORIZED',
+  'not authorized',
+  401
+)
 
 // Read access token from Authorization: Bearer header
 const read: OpenIDReadTokens = (request) => {
+  // Check if tokenset is already attached to request
+  const oldTokenset = request[AUTH_TOKENS]
+  if (oldTokenset) {
+    request.log.trace(
+      oldTokenset,
+      `Read tokenset from request[${String(AUTH_TOKENS)}]`
+    )
+    return oldTokenset
+  }
   const authHeader = request.headers.authorization
   if (authHeader?.startsWith('Bearer ')) {
-    const accessToken = authHeader.slice(7)
     request.log.debug('Read access token from Authorization header')
-    return { access_token: accessToken } as TokenEndpointResponse
+    const access_token = authHeader.slice(7)
+    return { access_token }
   }
-  return {} as TokenEndpointResponse
+  return {}
+}
+
+const write: OpenIDWriteTokens = async (request, _reply, tokenset) => {
+  request.log.trace(tokenset, `Setting request[${String(AUTH_TOKENS)}]`)
+  request[AUTH_TOKENS] = tokenset
 }
 
 async function main() {
@@ -57,58 +82,65 @@ async function main() {
     }
   })
 
+  // Register secure session plugin (required for OAuth state/nonce storage)
+  await fastify.register(secureSession, {
+    key: Buffer.from(sessionKey.padEnd(32, '0').slice(0, 32)),
+    cookieName: 'session',
+    cookie: {
+      path: '/',
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'lax'
+    }
+  })
+
   // Discover OpenID configuration
-  const config = await discovery(new URL(issuer), clientId, clientSecret)
+  const config = await discovery(
+    new URL(issuer),
+    clientId,
+    clientSecret,
+    undefined,
+    // NOTE: allowInsecureRequests is for local development only - remove in production!
+    { execute: [allowInsecureRequests] }
+  )
 
   // Get JWKS for token verification
   const jwksUri = config.serverMetadata().jwks_uri
   if (!jwksUri) {
     throw new Error('No JWKS URI found in OpenID configuration')
   }
-  const jwks = createRemoteJWKSet(new URL(jwksUri))
+  const key = createRemoteJWKSet(new URL(jwksUri))
 
   // Register OpenID auth plugin
   await fastify.register(openIDAuthPlugin, {
     decorator: AUTH_HANDLERS,
     config,
     login: {
-      // Return tokens as JSON after successful login
-      write: async (_request, reply, tokenset) => {
-        return reply.send({
-          access_token: tokenset.access_token,
-          token_type: tokenset.token_type,
-          expires_in: tokenset.expires_in,
-          refresh_token: tokenset.refresh_token,
-          scope: tokenset.scope
-        })
-      },
+      usePKCE: true,
+      write,
       parameters: {
-        redirect_uri: redirectUri,
-        scope: 'openid profile email offline_access'
+        redirect_uri: 'http://localhost:3000/login/callback',
+        scope: 'openid profile email'
       }
     },
     verify: {
-      key: jwks,
+      key,
       tokens: ['access_token'],
-      read
+      read,
+      write(_request, _reply, _tokenset, verified) {
+        if (!verified?.access_token) {
+          throw new NotAuthenticatedError()
+        }
+      }
     },
     refresh: {
       read,
-      // Return new tokens as JSON after refresh
-      write: async (_request, reply, tokenset) => {
-        return reply.send({
-          access_token: tokenset.access_token,
-          token_type: tokenset.token_type,
-          expires_in: tokenset.expires_in,
-          refresh_token: tokenset.refresh_token,
-          scope: tokenset.scope
-        })
-      }
+      write
     },
     logout: {
       read,
       parameters: {
-        post_logout_redirect_uri: 'http://localhost:3000/'
+        post_logout_redirect_uri: 'http://localhost:3000/logout/callback'
       }
     }
   })
@@ -117,48 +149,37 @@ async function main() {
   const { login, logout, verify, refresh } = fastify[AUTH_HANDLERS]
 
   // Routes
-  fastify.get('/', async () => {
-    return {
-      message: 'OpenID Connect Basic Example',
-      description: 'Use Bearer token authentication for protected routes',
-      endpoints: {
-        login: 'GET /login - Redirects to IdP, returns tokens as JSON',
-        callback: 'GET /callback - OAuth callback (handled automatically)',
-        protected:
-          'GET /protected - Requires Authorization: Bearer <access_token>',
-        refresh: 'POST /refresh - Refresh tokens (send refresh_token in body)',
-        logout: 'GET /logout - End session'
+  fastify
+    .get('/', () => {
+      return {
+        message: 'OpenID Connect Basic Example',
+        endpoints: {
+          login: '/login',
+          refresh: '/refresh',
+          logout: '/logout',
+          protected: '/protected'
+        }
       }
-    }
-  })
-
-  fastify.get('/login', { preHandler: login }, async () => {
-    // This handler won't be called - login redirects to IdP
-  })
-
-  fastify.get('/callback', { preHandler: login }, async () => {
-    // This handler won't be called - login.write sends the response
-  })
-
-  fastify.get('/protected', { preHandler: verify }, async () => {
-    return {
-      message: 'You have access!',
-      note: 'Token was verified successfully'
-    }
-  })
-
-  fastify.post('/refresh', { preHandler: refresh }, async () => {
-    // This handler won't be called - refresh.write sends the response
-  })
-
-  fastify.get('/logout', { preHandler: logout }, async () => {
-    return { message: 'Logged out' }
-  })
+    })
+    .get('/login', login)
+    .get('/login/callback', { preHandler: [login, verify] }, (request) => ({
+      message: 'Login successful',
+      tokens: request[AUTH_TOKENS]
+    }))
+    .get('/refresh', { preHandler: [refresh, verify] }, (request) => ({
+      message: 'Tokens refreshed',
+      tokens: request[AUTH_TOKENS]
+    }))
+    .get('/protected', { preHandler: verify }, () => ({
+      message: 'You have access!'
+    }))
+    .get('/logout', logout)
+    .get('/logout/callback', { preHandler: logout }, () => ({
+      message: 'Logout successful'
+    }))
 
   // Start server
   await fastify.listen({ port: 3000, host: '0.0.0.0' })
-  console.log('Server running at http://localhost:3000')
-  console.log('Login at http://localhost:3000/login')
 }
 
 main().catch((err) => {

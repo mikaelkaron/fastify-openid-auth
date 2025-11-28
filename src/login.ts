@@ -107,12 +107,8 @@ const resolveParameters = async (
     | undefined,
   request: FastifyRequest,
   reply: FastifyReply
-): Promise<AuthorizationParameters | undefined> => {
-  if (typeof parameters === 'function') {
-    return await parameters(request, reply)
-  }
-  return parameters
-}
+): Promise<AuthorizationParameters | undefined> =>
+  typeof parameters === 'function' ? parameters(request, reply) : parameters
 
 export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
   config,
@@ -191,8 +187,9 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
     request.session.set(sessionKey, undefined)
 
     // Build the current URL from the request
+    // Always include port to match the original redirect_uri
     const currentUrl = new URL(
-      `${request.protocol}://${request.hostname}${request.url}`
+      `${request.protocol}://${request.hostname}:${request.socket.localPort}${request.url}`
     )
 
     const tokenset = await authorizationCodeGrant(config, currentUrl, {

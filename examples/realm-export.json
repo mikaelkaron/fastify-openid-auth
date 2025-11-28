@@ -14,14 +14,14 @@
       "enabled": true,
       "publicClient": false,
       "secret": "example-secret",
-      "redirectUris": ["http://localhost:3000/*"],
-      "webOrigins": ["http://localhost:3000"],
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "protocol": "openid-connect",
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3000/*"
+        "post.logout.redirect.uris": "*"
       }
     }
   ],

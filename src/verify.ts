@@ -22,7 +22,7 @@ export interface OpenIDVerifyOptions {
 }
 
 export type OpenIDJWTVerify = (
-  tokenset: TokenEndpointResponse,
+  tokenset: Partial<Pick<TokenEndpointResponse, OpenIDTokens>>,
   options: OpenIDVerifyOptions
 ) => Promise<OpenIDJWTVerified>
 
@@ -33,7 +33,7 @@ export const openIDJWTVerify: OpenIDJWTVerify = async (
   const verified: OpenIDJWTVerified = {}
   for (const token of tokens) {
     const jwt = tokenset[token]
-    if (typeof jwt === 'string') {
+    if (jwt !== undefined) {
       // TypeScript requires separate calls for function vs static key overloads
       verified[token] =
         typeof key === 'function'
@@ -64,7 +64,9 @@ export const openIDVerifyHandlerFactory: OpenIDVerifyHandlerFactory = ({
 }) =>
   async function openIDVerifyHandler(request, reply) {
     const tokenset = await read.call(this, request, reply)
-    const verified = await openIDJWTVerify(tokenset, verify)
+    const verified = tokenset
+      ? await openIDJWTVerify(tokenset, verify)
+      : undefined
     request.log.trace('OpenID tokens verified')
     return await write?.call(this, request, reply, tokenset, verified)
   }

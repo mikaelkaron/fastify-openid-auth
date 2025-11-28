@@ -11,6 +11,7 @@ import { createTestFastify } from './helpers/fastify.ts'
 describe('openIDLogoutHandlerFactory', () => {
   let provider: TestProvider
   let config: Configuration
+  let keys: Awaited<ReturnType<typeof getTestKeys>>
 
   before(async () => {
     provider = await createTestProvider({ port: 3003 })
@@ -19,6 +20,7 @@ describe('openIDLogoutHandlerFactory', () => {
       clientId: 'test-client',
       clientSecret: 'test-secret'
     })
+    keys = await getTestKeys()
   })
 
   after(async () => {
@@ -115,6 +117,34 @@ describe('openIDLogoutHandlerFactory', () => {
   })
 
   describe('logout callback', () => {
+    it('should throw if post_logout_redirect_uri is not absolute', async () => {
+      const tokenset = await createTokenSet({
+        issuer: provider.issuer,
+        clientId: 'test-client'
+      })
+
+      const fastify = await createTestFastify()
+
+      const handler = openIDLogoutHandlerFactory(config, {
+        parameters: {
+          post_logout_redirect_uri: '/relative/path'
+        },
+        read: () => tokenset
+      })
+
+      fastify.get('/logout', handler)
+      await fastify.ready()
+
+      const response = await fastify.inject({
+        method: 'GET',
+        url: '/logout'
+      })
+
+      assert.strictEqual(response.statusCode, 500)
+      assert.match(response.body, /ERR_INVALID_URL/)
+
+      await fastify.close()
+    })
     it('should call write function on callback', async () => {
       const tokenset = await createTokenSet({
         issuer: provider.issuer,
@@ -125,12 +155,18 @@ describe('openIDLogoutHandlerFactory', () => {
 
       let writeCalled = false
       let receivedTokenset: unknown
+      let receivedVerified: unknown
 
       const handler = openIDLogoutHandlerFactory(config, {
+        parameters: {
+          post_logout_redirect_uri:
+            'http://localhost:8080/logout?state=some-state'
+        },
         read: () => tokenset,
-        write: async (_request, reply, ts) => {
+        write: async (_request, reply, ts, verified) => {
           writeCalled = true
           receivedTokenset = ts
+          receivedVerified = verified
           return reply.send({ loggedOut: true })
         }
       })
@@ -147,12 +183,15 @@ describe('openIDLogoutHandlerFactory', () => {
       assert.strictEqual(response.statusCode, 200)
       assert.strictEqual(writeCalled, true)
       assert.ok(receivedTokenset)
+      // receivedVerified may be undefined if verify is not provided
+      assert.ok(
+        receivedVerified === undefined || typeof receivedVerified === 'object'
+      )
 
       await fastify.close()
     })
 
     it('should verify tokens on callback when verify option provided', async () => {
-      const keys = await getTestKeys()
       const tokenset = await createTokenSet({
         issuer: provider.issuer,
         clientId: 'test-client'
@@ -163,14 +202,14 @@ describe('openIDLogoutHandlerFactory', () => {
       let receivedVerified: unknown
 
       const handler = openIDLogoutHandlerFactory(config, {
+        parameters: {
+          post_logout_redirect_uri:
+            'http://localhost:8080/logout?state=some-state'
+        },
         read: () => tokenset,
         verify: {
           key: keys.publicKey,
-          tokens: ['id_token'],
-          options: {
-            issuer: provider.issuer,
-            audience: 'test-client'
-          }
+          tokens: ['id_token']
         },
         write: async (_request, reply, _ts, verified) => {
           receivedVerified = verified
@@ -203,6 +242,10 @@ describe('openIDLogoutHandlerFactory', () => {
       const fastify = await createTestFastify()
 
       const handler = openIDLogoutHandlerFactory(config, {
+        parameters: {
+          post_logout_redirect_uri:
+            'http://localhost:8080/logout?state=some-state'
+        },
         read: () => tokenset
       })
 

@@ -12,12 +12,12 @@ export type OpenIDReadTokens = (
   this: FastifyInstance,
   request: FastifyRequest,
   reply: FastifyReply
-) => Promise<TokenEndpointResponse> | TokenEndpointResponse
+) => Promise<Partial<TokenEndpointResponse>> | Partial<TokenEndpointResponse>
 
 export type OpenIDWriteTokens = (
   this: FastifyInstance,
   request: FastifyRequest,
   reply: FastifyReply,
-  tokenset: TokenEndpointResponse,
+  tokenset?: Partial<TokenEndpointResponse>,
   verified?: OpenIDJWTVerified
 ) => Promise<void> | void
