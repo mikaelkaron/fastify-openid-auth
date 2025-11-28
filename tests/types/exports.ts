@@ -125,6 +125,26 @@ const _pluginOptions: FastifyOpenIDAuthPluginOptions = {
   }
 }
 
+// Test destructuring handlers from decorator
+const fastifyInstance = {} as FastifyInstance & { openid: OpenIDAuthHandlers }
+const { login, verify, refresh, logout } = fastifyInstance.openid
+// Handlers should be usable as RouteHandlerMethod
+const _loginHandler: RouteHandlerMethod = login
+const _verifyHandler: RouteHandlerMethod = verify
+const _refreshHandler: RouteHandlerMethod = refresh
+const _logoutHandler: RouteHandlerMethod = logout
+
+// Test using verify as preHandler in Fastify route
+interface AuthRequest extends FastifyInstance {
+  'auth-tokens'?: TokenEndpointResponse
+}
+const _routeConfig = {
+  preHandler: verify,
+  handler: async (request: AuthRequest) => {
+    return { user: request['auth-tokens'] }
+  }
+}
+
 // OpenIDTokens should be a union of token keys
 const _tokenType: OpenIDTokens = 'id_token'
 const _tokenType2: OpenIDTokens = 'access_token'
