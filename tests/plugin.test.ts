@@ -49,6 +49,7 @@ describe('openIDAuthPlugin', () => {
     await fastify.register(plugin, {
       decorator: 'openid',
       config,
+      login: {},
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
@@ -100,6 +101,7 @@ describe('openIDAuthPlugin', () => {
     await fastify.register(plugin, {
       decorator: decoratorSymbol,
       config,
+      login: {},
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
@@ -158,6 +160,7 @@ describe('openIDAuthPlugin', () => {
     await fastify.register(plugin, {
       decorator: 'openid',
       config,
+      login: {},
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],

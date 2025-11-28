@@ -1,8 +1,4 @@
-import type {
-  FastifyPluginAsync,
-  FastifyPluginOptions,
-  RouteHandlerMethod
-} from 'fastify'
+import type { FastifyPluginAsync, RouteHandlerMethod } from 'fastify'
 import fp from 'fastify-plugin'
 import type { Configuration } from 'openid-client'
 import {
@@ -22,15 +18,6 @@ import {
   openIDVerifyHandlerFactory
 } from './verify.js'
 
-export type FastifyOpenIDAuthPluginOptions = FastifyPluginOptions & {
-  decorator: string | symbol
-  config: Configuration
-  login?: OpenIDLoginHandlerOptions
-  verify: OpenIDVerifyHandlerOptions
-  refresh: OpenIDRefreshHandlerOptions
-  logout: OpenIDLogoutHandlerOptions
-}
-
 export interface OpenIDAuthHandlers {
   login: RouteHandlerMethod
   verify: RouteHandlerMethod
@@ -38,22 +25,41 @@ export interface OpenIDAuthHandlers {
   logout: RouteHandlerMethod
 }
 
+export type OpenIDHandlersOptions = {
+  login?: OpenIDLoginHandlerOptions
+  verify: OpenIDVerifyHandlerOptions
+  refresh: OpenIDRefreshHandlerOptions
+  logout: OpenIDLogoutHandlerOptions
+}
+
+export type OpenIDHandlersFactory = (
+  config: Configuration,
+  options: OpenIDHandlersOptions
+) => OpenIDAuthHandlers
+
+export const openIDHandlersFactory: OpenIDHandlersFactory = (
+  config,
+  { login, refresh, verify, logout }
+) => ({
+  login: openIDLoginHandlerFactory(config, login),
+  refresh: openIDRefreshHandlerFactory(config, refresh),
+  verify: openIDVerifyHandlerFactory(verify),
+  logout: openIDLogoutHandlerFactory(config, logout)
+})
+
+export type FastifyOpenIDAuthPluginOptions = OpenIDHandlersOptions & {
+  decorator: string | symbol
+  config: Configuration
+}
+
 export const openIDAuthPlugin: FastifyPluginAsync<
   FastifyOpenIDAuthPluginOptions
 > = async (fastify, options) => {
-  const { decorator, config, login, refresh, verify, logout } = options
-
-  const openIDAuthHandlers: OpenIDAuthHandlers = {
-    login: openIDLoginHandlerFactory(config, login),
-    refresh: openIDRefreshHandlerFactory(config, refresh),
-    verify: openIDVerifyHandlerFactory(verify),
-    logout: openIDLogoutHandlerFactory(config, logout)
-  }
-
+  const { decorator, config, ...rest } = options
   fastify.log.trace(
     `decorating \`fastify[${String(decorator)}]\` with OpenIDAuthHandlers`
   )
-  fastify.decorate(decorator, openIDAuthHandlers)
+  fastify.decorate(decorator, openIDHandlersFactory(config, rest))
 }
 
 export default fp(openIDAuthPlugin, {
