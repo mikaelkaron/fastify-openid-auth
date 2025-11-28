@@ -2,12 +2,12 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { JWTVerifyResult } from 'jose'
 import type { TokenEndpointResponse } from 'openid-client'
 
-export type ParametersFunction<T> = (
+export type ResolvableFunction<T> = (
   request: FastifyRequest,
   reply: FastifyReply
 ) => T | PromiseLike<T>
 
-export type ParametersOrParameterFunction<T> = T | ParametersFunction<T>
+export type Resolvable<T> = T | ResolvableFunction<T>
 
 export type OpenIDTokens = 'id_token' | 'access_token' | 'refresh_token'
 

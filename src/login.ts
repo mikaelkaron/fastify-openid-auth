@@ -10,10 +10,7 @@ import {
   randomPKCECodeVerifier,
   randomState
 } from 'openid-client'
-import type {
-  OpenIDWriteTokens,
-  ParametersOrParameterFunction
-} from './types.js'
+import type { OpenIDWriteTokens, Resolvable } from './types.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
 
 declare module 'fastify' {
@@ -35,7 +32,7 @@ export type AuthorizationParameters = Record<string, string>
 export type AuthorizationTokenEndpointParameters = Record<string, string>
 
 export type AuthorizationTokenEndpoint = {
-  parameters?: ParametersOrParameterFunction<AuthorizationTokenEndpointParameters>
+  parameters?: Resolvable<AuthorizationTokenEndpointParameters>
   options?: AuthorizationCodeGrantOptions
 }
 
@@ -46,7 +43,7 @@ export interface CallbackChecks {
 }
 
 export interface OpenIDLoginHandlerOptions {
-  parameters?: ParametersOrParameterFunction<AuthorizationParameters>
+  parameters?: Resolvable<AuthorizationParameters>
   usePKCE?: boolean | 'plain' | 'S256'
   sessionKey?: string
   tokenEndpoint?: AuthorizationTokenEndpoint

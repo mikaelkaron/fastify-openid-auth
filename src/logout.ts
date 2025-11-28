@@ -3,7 +3,7 @@ import { buildEndSessionUrl, type Configuration } from 'openid-client'
 import type {
   OpenIDReadTokens,
   OpenIDWriteTokens,
-  ParametersOrParameterFunction
+  Resolvable
 } from './types.js'
 import { resolveParameters } from './utils.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
@@ -11,7 +11,7 @@ import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
 export type EndSessionParameters = Record<string, string>
 
 export interface OpenIDLogoutHandlerOptions {
-  parameters?: ParametersOrParameterFunction<EndSessionParameters>
+  parameters?: Resolvable<EndSessionParameters>
   verify?: OpenIDVerifyOptions
   read: OpenIDReadTokens
   write?: OpenIDWriteTokens
@@ -33,19 +33,12 @@ export const openIDLogoutHandlerFactory: OpenIDLogoutHandlerFactory = (
 
     // If post_logout_redirect_uri is present, handle callback logic
     if (params?.post_logout_redirect_uri) {
-      try {
-        const url = new URL(params.post_logout_redirect_uri)
-        const callbackPath = `${url.pathname}${url.search}`
-        if (request.url === callbackPath) {
-          const verified = verify
-            ? await openIDJWTVerify(tokenset, verify)
-            : undefined
-          return await write?.call(this, request, reply, tokenset, verified)
-        }
-      } catch (err) {
-        // If URL is invalid, throw error (matches test expectations)
-        reply.code(500)
-        return reply.send({ error: 'ERR_INVALID_URL', message: String(err) })
+      const { pathname, search } = new URL(params.post_logout_redirect_uri)
+      if (request.url === `${pathname}${search}`) {
+        const verified = verify
+          ? await openIDJWTVerify(tokenset, verify)
+          : undefined
+        return await write?.call(this, request, reply, tokenset, verified)
       }
     }
 

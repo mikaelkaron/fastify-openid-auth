@@ -206,6 +206,7 @@ async function main() {
     logout: {
       read,
       write(request, response) {
+        // Skip tokenset
         return write.call(this, request, response)
       },
       parameters: {

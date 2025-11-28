@@ -8,7 +8,7 @@ import {
 import type {
   OpenIDReadTokens,
   OpenIDWriteTokens,
-  ParametersOrParameterFunction
+  Resolvable
 } from './types.js'
 import { resolveParameters } from './utils.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
@@ -22,7 +22,7 @@ export const OpenIDRefreshTokenMissingError = createError(
 export type RefreshTokenEndpointParameters = Record<string, string>
 
 export type RefreshTokenEndpoint = {
-  parameters?: ParametersOrParameterFunction<RefreshTokenEndpointParameters>
+  parameters?: Resolvable<RefreshTokenEndpointParameters>
   options?: DPoPOptions
 }
 
