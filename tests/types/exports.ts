@@ -6,8 +6,8 @@
  */
 
 import type { FastifyInstance, RouteHandlerMethod } from 'fastify'
-import type { KeyLike } from 'jose'
-import type { Client, TokenSetParameters } from 'openid-client'
+import type { CryptoKey } from 'jose'
+import type { Configuration, TokenEndpointResponse } from 'openid-client'
 import * as allExports from '../../src/index.js'
 // Test index exports (re-exports everything)
 import { default as defaultExport } from '../../src/index.js'
@@ -44,10 +44,10 @@ import {
 // Type assertions
 
 // Login handler factory should return RouteHandlerMethod
-declare const client: Client
-const loginHandler: RouteHandlerMethod = openIDLoginHandlerFactory(client)
+const mockConfig = {} as Configuration
+const loginHandler: RouteHandlerMethod = openIDLoginHandlerFactory(mockConfig)
 const _loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(
-  client,
+  mockConfig,
   {
     usePKCE: 'S256',
     sessionKey: 'test'
@@ -64,7 +64,7 @@ const _authParamsFunc: AuthorizationParametersFunction = async (
 
 // Verify options type
 const verifyOptions: OpenIDVerifyOptions = {
-  key: {} as KeyLike,
+  key: {} as CryptoKey,
   tokens: ['id_token', 'access_token'],
   options: { issuer: 'test' }
 }
@@ -72,18 +72,24 @@ const verifyOptions: OpenIDVerifyOptions = {
 // Verify handler factory should return RouteHandlerMethod
 const verifyHandler: RouteHandlerMethod = openIDVerifyHandlerFactory({
   ...verifyOptions,
-  read: async () => ({}) as TokenSetParameters
+  read: async () => ({}) as TokenEndpointResponse
 })
 
 // Refresh handler factory should return RouteHandlerMethod
-const refreshHandler: RouteHandlerMethod = openIDRefreshHandlerFactory(client, {
-  read: async () => ({}) as TokenSetParameters
-})
+const refreshHandler: RouteHandlerMethod = openIDRefreshHandlerFactory(
+  mockConfig,
+  {
+    read: async () => ({}) as TokenEndpointResponse
+  }
+)
 
 // Logout handler factory should return RouteHandlerMethod
-const logoutHandler: RouteHandlerMethod = openIDLogoutHandlerFactory(client, {
-  read: async () => ({}) as TokenSetParameters
-})
+const logoutHandler: RouteHandlerMethod = openIDLogoutHandlerFactory(
+  mockConfig,
+  {
+    read: async () => ({}) as TokenEndpointResponse
+  }
+)
 
 // Error classes should be constructable
 const _sessionKeyError = new SessionKeyError()
@@ -106,16 +112,16 @@ const _handlers: OpenIDAuthHandlers = {
 // Plugin options type check
 const _pluginOptions: FastifyOpenIDAuthPluginOptions = {
   decorator: 'openid',
-  client,
+  config: mockConfig,
   verify: {
     ...verifyOptions,
-    read: async () => ({}) as TokenSetParameters
+    read: async () => ({}) as TokenEndpointResponse
   },
   refresh: {
-    read: async () => ({}) as TokenSetParameters
+    read: async () => ({}) as TokenEndpointResponse
   },
   logout: {
-    read: async () => ({}) as TokenSetParameters
+    read: async () => ({}) as TokenEndpointResponse
   }
 }
 
@@ -130,7 +136,7 @@ const _readTokens: OpenIDReadTokens = async function (
   _request,
   _reply
 ) {
-  return {} as TokenSetParameters
+  return {} as TokenEndpointResponse
 }
 
 const _writeTokens: OpenIDWriteTokens = async function (
