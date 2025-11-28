@@ -1,3 +1,15 @@
+# [12.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v11.2.0...v12.0.0) (2025-11-28)
+
+
+### Features
+
+* externalize `session` ([c736084](https://github.com/mikaelkaron/fastify-openid-auth/commit/c73608478b687347c0e7105bdb50a3feb75d461c))
+
+
+### BREAKING CHANGES
+
+* This requires the `session`  configuration options to be passed in `OpenIDLoginHandlerOptions` and makes `options` required for `OpenIDLoginHandler`
+
 # [11.2.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v11.1.0...v11.2.0) (2025-11-28)
 
 
