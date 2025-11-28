@@ -1,3 +1,12 @@
+# [11.2.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v11.1.0...v11.2.0) (2025-11-28)
+
+
+### Features
+
+* add support for dynamic end session parameters functions ([257ac14](https://github.com/mikaelkaron/fastify-openid-auth/commit/257ac143239a1785ac3d8f72faf5862d0e786899))
+* enhance OpenID refresh handler to support dynamic parameters function ([ed3bf97](https://github.com/mikaelkaron/fastify-openid-auth/commit/ed3bf97c4e2231a70065b92bccf16cf36e1ec3c5))
+* refactor token endpoint handling to support dynamic parameters and remove unused type tests ([19c23eb](https://github.com/mikaelkaron/fastify-openid-auth/commit/19c23ebbbce83d4d31a4fcc2426ec627498cc4a9))
+
 # [11.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v11.0.0...v11.1.0) (2025-11-28)
 
 
