@@ -1,3 +1,32 @@
+# [11.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v10.1.0...v11.0.0) (2025-11-28)
+
+
+* feat!: upgrade openid-client to v6 and jose to v6 ([dcf1ee0](https://github.com/mikaelkaron/fastify-openid-auth/commit/dcf1ee072cb3e74168c8bfde2d31af4010d0569c))
+
+
+### Features
+
+* added examples and code cleanup ([7ec3b06](https://github.com/mikaelkaron/fastify-openid-auth/commit/7ec3b06cf5e7d0705cea4c53e642685f4df36e06))
+
+
+### BREAKING CHANGES
+
+* This upgrade introduces breaking changes to the library API.
+
+- openid-client upgraded from v5 to v6 (function-based API)
+- jose upgraded from v4 to v6 (CryptoKey/KeyObject types)
+
+API changes:
+- Client type replaced with Configuration
+- TokenSetParameters replaced with TokenEndpointResponse
+- KeyLike replaced with CryptoKey | KeyObject | JWK | Uint8Array
+- discovery() function now used instead of Issuer.discover()
+
+New exports from openid-client:
+- Configuration type
+- TokenEndpointResponse type
+- discovery function
+
 # [10.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v10.0.0...v10.1.0) (2025-11-26)
 
 
