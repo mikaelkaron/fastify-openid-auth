@@ -1,48 +1,24 @@
 import Fastify, { type FastifyInstance } from 'fastify'
+import type { AuthorizationChecks, OpenIDSession } from '../../src/index.ts'
 
-export interface MockSession {
-  data: Map<string, unknown>
-  get<T>(key: string): T | undefined
-  set<T>(key: string, value: T | undefined): void
-}
+export const createTestSession = <T extends AuthorizationChecks>(
+  initial?: T
+): OpenIDSession<T> => {
+  let store: T | undefined = initial
 
-export function createMockSession(): MockSession {
-  const data = new Map<string, unknown>()
-  return {
-    data,
-    get<T>(key: string): T | undefined {
-      return data.get(key) as T | undefined
-    },
-    set<T>(key: string, value: T | undefined): void {
-      if (value === undefined) {
-        data.delete(key)
-      } else {
-        data.set(key, value)
-      }
-    }
+  const get: OpenIDSession<T>['get'] = (_request, _reply) => {
+    return store
   }
+
+  const set: OpenIDSession<T>['set'] = (_request, _reply, value) => {
+    store = value
+  }
+
+  return { get, set }
 }
 
-export interface TestFastifyOptions {
-  session?: MockSession
-}
-
-export async function createTestFastify(
-  options: TestFastifyOptions = {}
-): Promise<FastifyInstance> {
-  const session = options.session ?? createMockSession()
-
-  const fastify = Fastify({
+export async function createTestFastify(): Promise<FastifyInstance> {
+  return Fastify({
     logger: false
   })
-
-  // Decorate request with mock session
-  // Use getter pattern for request decoration
-  fastify.decorateRequest('session', {
-    getter() {
-      return session
-    }
-  })
-
-  return fastify
 }

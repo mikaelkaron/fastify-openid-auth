@@ -30,3 +30,19 @@ export type OpenIDWriteTokens = (
   tokenset?: Partial<TokenEndpointResponse>,
   verified?: OpenIDJWTVerified
 ) => PromiseLike<void> | void
+
+export type OpenIDSessionGet<T> = (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => T | undefined
+
+export type OpenIDSessionSet<T> = (
+  request: FastifyRequest,
+  reply: FastifyReply,
+  value: T | undefined
+) => void
+
+export type OpenIDSession<T> = {
+  get: OpenIDSessionGet<T>
+  set: OpenIDSessionSet<T>
+}

@@ -10,7 +10,7 @@ import { getTestKeys } from './fixtures/keys.ts'
 import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
 import { createTokenSet } from './fixtures/tokens.ts'
 import { createTestConfig } from './helpers/config.ts'
-import { createMockSession } from './helpers/fastify.ts'
+import { createTestSession } from './helpers/fastify.ts'
 
 describe('openIDAuthPlugin', () => {
   let provider: TestProvider
@@ -36,20 +36,13 @@ describe('openIDAuthPlugin', () => {
       clientId: 'test-client'
     })
 
-    const session = createMockSession()
+    const session = createTestSession()
     const fastify = Fastify({ logger: false })
-
-    // Add session decorator
-    fastify.decorateRequest('session', {
-      getter() {
-        return session
-      }
-    })
 
     await fastify.register(plugin, {
       decorator: 'openid',
       config,
-      login: {},
+      login: { session },
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
@@ -88,20 +81,14 @@ describe('openIDAuthPlugin', () => {
       clientId: 'test-client'
     })
 
-    const session = createMockSession()
+    const session = createTestSession()
     const fastify = Fastify({ logger: false })
     const decoratorSymbol = Symbol('openid')
-
-    fastify.decorateRequest('session', {
-      getter() {
-        return session
-      }
-    })
 
     await fastify.register(plugin, {
       decorator: decoratorSymbol,
       config,
-      login: {},
+      login: { session },
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
@@ -148,19 +135,13 @@ describe('openIDAuthPlugin', () => {
       clientId: 'test-client'
     })
 
-    const session = createMockSession()
+    const session = createTestSession()
     const fastify = Fastify({ logger: false })
-
-    fastify.decorateRequest('session', {
-      getter() {
-        return session
-      }
-    })
 
     await fastify.register(plugin, {
       decorator: 'openid',
       config,
-      login: {},
+      login: { session },
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],

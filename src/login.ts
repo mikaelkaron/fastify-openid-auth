@@ -10,22 +10,9 @@ import {
   randomPKCECodeVerifier,
   randomState
 } from 'openid-client'
-import type { OpenIDWriteTokens, Resolvable } from './types.js'
+import type { OpenIDSession, OpenIDWriteTokens, Resolvable } from './types.js'
+import { resolveParameters } from './utils.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    session: Session
-  }
-
-  type Session<T = SessionData> = Partial<T> & {
-    get<Key extends keyof T>(key: Key): T[Key] | undefined
-    set<Key extends keyof T>(key: Key, value: T[Key] | undefined): void
-  }
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: User can supply `any` type in the app
-export type SessionData = Record<string, any>
 
 export type AuthorizationParameters = Record<string, string>
 
@@ -36,7 +23,7 @@ export type AuthorizationTokenEndpoint = {
   options?: AuthorizationCodeGrantOptions
 }
 
-export interface CallbackChecks {
+export type AuthorizationChecks = {
   state?: string
   nonce?: string
   pkceCodeVerifier?: string
@@ -45,15 +32,15 @@ export interface CallbackChecks {
 export interface OpenIDLoginHandlerOptions {
   parameters?: Resolvable<AuthorizationParameters>
   usePKCE?: boolean | 'plain' | 'S256'
-  sessionKey?: string
   tokenEndpoint?: AuthorizationTokenEndpoint
   verify?: OpenIDVerifyOptions
   write?: OpenIDWriteTokens
+  session: OpenIDSession<AuthorizationChecks>
 }
 
 export type OpenIDLoginHandlerFactory = (
   config: Configuration,
-  options?: OpenIDLoginHandlerOptions
+  options: OpenIDLoginHandlerOptions
 ) => RouteHandlerMethod
 
 export const SessionKeyError = createError(
@@ -96,32 +83,21 @@ const resolveSupportedMethod = (config: Configuration): string => {
   throw new SupportedMethodError()
 }
 
-const resolveSessionKey = (config: Configuration): string => {
-  const issuer = config.serverMetadata().issuer
-  if (issuer === undefined) {
-    throw new SessionKeyError()
-  }
-  return `oidc:${new URL(issuer).hostname}`
-}
-
-import { resolveParameters } from './utils.js'
-
 export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
   config,
   options
 ) => {
-  const sessionKey = options?.sessionKey ?? resolveSessionKey(config)
   const usePKCE =
-    options?.usePKCE !== undefined
+    options.usePKCE !== undefined
       ? options.usePKCE === true
         ? resolveSupportedMethod(config)
         : options.usePKCE
       : false
 
-  const { verify, write, tokenEndpoint } = { ...options }
+  const { verify, write, tokenEndpoint, session } = { ...options }
 
   return async function openIDLoginHandler(request, reply) {
-    const params = await resolveParameters(options?.parameters, request, reply)
+    const params = await resolveParameters(options.parameters, request, reply)
     const redirect_uri = params?.redirect_uri ?? resolveRedirectUri(config)
 
     // Check if this is a callback (has code or error in query)
@@ -142,7 +118,7 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
         ...params
       }
 
-      const callbackChecks: CallbackChecks = {
+      const callbackChecks: AuthorizationChecks = {
         state,
         nonce
       }
@@ -164,7 +140,8 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
         }
       }
 
-      request.session.set(sessionKey, callbackChecks)
+      session.set(request, reply, callbackChecks)
+
       const authUrl = buildAuthorizationUrl(config, parameters)
       request.log.trace('OpenID login redirect')
       return await reply.redirect(authUrl.href)
@@ -172,15 +149,15 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
     // #endregion
 
     // #region authentication response
-    const callbackChecks: CallbackChecks = request.session.get(sessionKey)
+    const callbackChecks = session.get(request, reply)
     if (
       callbackChecks === undefined ||
       Object.keys(callbackChecks).length === 0
     ) {
-      throw new SessionValueError(sessionKey)
+      throw new SessionValueError()
     }
 
-    request.session.set(sessionKey, undefined)
+    session.set(request, reply, undefined)
 
     // Build the current URL from the request
     // Always include port to match the original redirect_uri

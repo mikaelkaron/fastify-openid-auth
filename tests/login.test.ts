@@ -1,5 +1,6 @@
 import assert from 'node:assert'
 import { after, before, describe, it } from 'node:test'
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { Configuration } from 'openid-client'
 import {
   openIDLoginHandlerFactory,
@@ -9,9 +10,10 @@ import {
 } from '../src/login.ts'
 import { createTestProvider, type TestProvider } from './fixtures/provider.ts'
 import { createTestConfig } from './helpers/config.ts'
-import { createMockSession, createTestFastify } from './helpers/fastify.ts'
+import { createTestFastify, createTestSession } from './helpers/fastify.ts'
 
 describe('openIDLoginHandlerFactory', () => {
+  // Use createTestSession for required session API
   let provider: TestProvider
   let config: Configuration
 
@@ -30,15 +32,16 @@ describe('openIDLoginHandlerFactory', () => {
 
   describe('authorization request', () => {
     it('should support dynamic authorization parameters function with custom redirect_uri', async () => {
-      const session = createMockSession()
-      const fastify = await createTestFastify({ session })
+      const session = createTestSession()
+      const fastify = await createTestFastify()
       const handler = openIDLoginHandlerFactory(config, {
         parameters: (request) => ({
           scope: 'openid',
           redirect_uri:
             (request.query as { redirect?: string }).redirect ??
             'http://localhost:8080/default-login'
-        })
+        }),
+        session
       })
 
       fastify.get('/login', handler)
@@ -60,9 +63,11 @@ describe('openIDLoginHandlerFactory', () => {
       await fastify.close()
     })
     it('should redirect to authorization URL with default parameters', async () => {
-      const session = createMockSession()
-      const fastify = await createTestFastify({ session })
-      const handler = openIDLoginHandlerFactory(config)
+      const session = createTestSession()
+      const fastify = await createTestFastify()
+      const handler = openIDLoginHandlerFactory(config, {
+        session
+      })
 
       fastify.get('/login', handler)
       await fastify.ready()
@@ -81,8 +86,9 @@ describe('openIDLoginHandlerFactory', () => {
       assert.ok(location.includes('nonce='))
 
       // Session should have callback checks stored
-      const sessionKey = 'oidc:localhost'
-      const callbackChecks = session.get(sessionKey)
+      const mockRequest = {} as FastifyRequest
+      const mockReply = {} as FastifyReply
+      const callbackChecks = await session.get(mockRequest, mockReply)
       assert.ok(callbackChecks)
       assert.ok((callbackChecks as { state: string }).state)
       assert.ok((callbackChecks as { nonce: string }).nonce)
@@ -91,10 +97,10 @@ describe('openIDLoginHandlerFactory', () => {
     })
 
     it('should use custom session key when provided', async () => {
-      const session = createMockSession()
-      const fastify = await createTestFastify({ session })
+      const session = createTestSession()
+      const fastify = await createTestFastify()
       const handler = openIDLoginHandlerFactory(config, {
-        sessionKey: 'custom-session-key'
+        session
       })
 
       fastify.get('/login', handler)
@@ -105,20 +111,23 @@ describe('openIDLoginHandlerFactory', () => {
         url: '/login'
       })
 
-      const callbackChecks = session.get('custom-session-key')
+      const mockRequest = {} as FastifyRequest
+      const mockReply = {} as FastifyReply
+      const callbackChecks = await session.get(mockRequest, mockReply)
       assert.ok(callbackChecks)
 
       await fastify.close()
     })
 
     it('should include custom authorization parameters', async () => {
-      const session = createMockSession()
-      const fastify = await createTestFastify({ session })
+      const session = createTestSession()
+      const fastify = await createTestFastify()
       const handler = openIDLoginHandlerFactory(config, {
         parameters: {
           scope: 'openid profile email',
           prompt: 'consent'
-        }
+        },
+        session
       })
 
       fastify.get('/login', handler)
@@ -141,14 +150,15 @@ describe('openIDLoginHandlerFactory', () => {
     })
 
     it('should support dynamic authorization parameters function', async () => {
-      const session = createMockSession()
-      const fastify = await createTestFastify({ session })
+      const session = createTestSession()
+      const fastify = await createTestFastify()
       const handler = openIDLoginHandlerFactory(config, {
         parameters: (request) => ({
           scope: 'openid',
           state:
             (request.query as { customState?: string }).customState ?? 'default'
-        })
+        }),
+        session
       })
 
       fastify.get('/login', handler)
@@ -167,10 +177,11 @@ describe('openIDLoginHandlerFactory', () => {
 
     describe('PKCE', () => {
       it('should include S256 code challenge when usePKCE is true', async () => {
-        const session = createMockSession()
-        const fastify = await createTestFastify({ session })
+        const session = createTestSession()
+        const fastify = await createTestFastify()
         const handler = openIDLoginHandlerFactory(config, {
-          usePKCE: true
+          usePKCE: true,
+          session
         })
 
         fastify.get('/login', handler)
@@ -186,8 +197,9 @@ describe('openIDLoginHandlerFactory', () => {
         assert.ok(location.includes('code_challenge_method=S256'))
 
         // Session should have pkceCodeVerifier stored
-        const sessionKey = 'oidc:localhost'
-        const callbackChecks = session.get(sessionKey) as {
+        const mockRequest = {} as FastifyRequest
+        const mockReply = {} as FastifyReply
+        const callbackChecks = (await session.get(mockRequest, mockReply)) as {
           pkceCodeVerifier?: string
         }
         assert.ok(callbackChecks.pkceCodeVerifier)
@@ -196,10 +208,11 @@ describe('openIDLoginHandlerFactory', () => {
       })
 
       it('should include S256 code challenge when usePKCE is "S256"', async () => {
-        const session = createMockSession()
-        const fastify = await createTestFastify({ session })
+        const session = createTestSession()
+        const fastify = await createTestFastify()
         const handler = openIDLoginHandlerFactory(config, {
-          usePKCE: 'S256'
+          usePKCE: 'S256',
+          session
         })
 
         fastify.get('/login', handler)
@@ -217,10 +230,11 @@ describe('openIDLoginHandlerFactory', () => {
       })
 
       it('should include plain code challenge when usePKCE is "plain"', async () => {
-        const session = createMockSession()
-        const fastify = await createTestFastify({ session })
+        const session = createTestSession()
+        const fastify = await createTestFastify()
         const handler = openIDLoginHandlerFactory(config, {
-          usePKCE: 'plain'
+          usePKCE: 'plain',
+          session
         })
 
         fastify.get('/login', handler)
@@ -240,10 +254,11 @@ describe('openIDLoginHandlerFactory', () => {
       })
 
       it('should not include code challenge when usePKCE is false', async () => {
-        const session = createMockSession()
-        const fastify = await createTestFastify({ session })
+        const session = createTestSession()
+        const fastify = await createTestFastify()
         const handler = openIDLoginHandlerFactory(config, {
-          usePKCE: false
+          usePKCE: false,
+          session
         })
 
         fastify.get('/login', handler)
@@ -264,9 +279,11 @@ describe('openIDLoginHandlerFactory', () => {
 
   describe('callback handling', () => {
     it('should throw SessionValueError when session data is missing', async () => {
-      const session = createMockSession()
-      const fastify = await createTestFastify({ session })
-      const handler = openIDLoginHandlerFactory(config)
+      const session = createTestSession()
+      const fastify = await createTestFastify()
+      const handler = openIDLoginHandlerFactory(config, {
+        session
+      })
 
       fastify.get('/callback', handler)
       await fastify.ready()
@@ -287,8 +304,8 @@ describe('openIDLoginHandlerFactory', () => {
     it('should call write function with tokenset after successful callback', async () => {
       // This test requires a full OIDC flow which is complex to mock
       // We'll test that the handler structure is correct
-      const session = createMockSession()
-      const fastify = await createTestFastify({ session })
+      const session = createTestSession()
+      const fastify = await createTestFastify()
 
       let _writeCalled = false
       let _receivedTokenset: unknown
@@ -298,7 +315,8 @@ describe('openIDLoginHandlerFactory', () => {
           _writeCalled = true
           _receivedTokenset = tokenset
           return reply.send({ success: true })
-        }
+        },
+        session
       })
 
       fastify.get('/login', handler)

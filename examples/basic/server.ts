@@ -1,3 +1,4 @@
+import type { CookieSerializeOptions } from '@fastify/cookie'
 import createError from '@fastify/error'
 import secureSession from '@fastify/secure-session'
 import Fastify from 'fastify'
@@ -10,11 +11,38 @@ import openIDAuthPlugin, {
   discovery,
   type OpenIDAuthHandlers,
   type OpenIDReadTokens,
+  type OpenIDSession,
   type OpenIDWriteTokens
 } from '../../src/index.ts'
 
 const AUTH_HANDLERS = Symbol.for('auth-handlers')
 const AUTH_TOKENS = Symbol.for('auth-tokens')
+const AUTH_SESSION = 'oidc'
+const SESSION_COOKIE = 'session'
+const COOKIE_SERIALIZE_OPTIONS: CookieSerializeOptions = {
+  path: '/',
+  httpOnly: true,
+  secure: false, // Set to true in production with HTTPS
+  sameSite: 'lax'
+}
+
+type SessionValue = Record<string, unknown>
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    [AUTH_HANDLERS]: OpenIDAuthHandlers
+  }
+
+  interface FastifyRequest {
+    [AUTH_TOKENS]?: Partial<TokenEndpointResponse>
+  }
+}
+
+declare module '@fastify/secure-session' {
+  interface SessionData {
+    [AUTH_SESSION]?: SessionValue
+  }
+}
 
 // Environment variables
 const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, SESSION_KEY } =
@@ -31,25 +59,26 @@ const clientId = OIDC_CLIENT_ID
 const clientSecret = OIDC_CLIENT_SECRET
 const sessionKey = SESSION_KEY
 
-declare module 'fastify' {
-  interface FastifyInstance {
-    [AUTH_HANDLERS]: OpenIDAuthHandlers
-  }
-
-  interface FastifyRequest {
-    [AUTH_TOKENS]?: Partial<TokenEndpointResponse>
-  }
-}
-
 const NotAuthenticatedError = createError(
   'FST_UNAUTHORIZED',
   'not authorized',
   401
 )
 
-// Read access token from Authorization: Bearer header
+const session: OpenIDSession<SessionValue> = {
+  get(request, _reply) {
+    request.log.trace(`Getting ${AUTH_SESSION} session variable`)
+    return request.session.get(AUTH_SESSION)
+  },
+  set(request, _reply, value) {
+    request.log.trace(
+      `${value ? 'Setting' : 'Clearing'} ${AUTH_SESSION} session variable`
+    )
+    request.session.set(AUTH_SESSION, value)
+  }
+}
+
 const read: OpenIDReadTokens = (request) => {
-  // Check if tokenset is already attached to request
   const oldTokenset = request[AUTH_TOKENS]
   if (oldTokenset) {
     request.log.trace(
@@ -85,13 +114,8 @@ async function main() {
   // Register secure session plugin (required for OAuth state/nonce storage)
   await fastify.register(secureSession, {
     key: Buffer.from(sessionKey.padEnd(32, '0').slice(0, 32)),
-    cookieName: 'session',
-    cookie: {
-      path: '/',
-      httpOnly: true,
-      secure: false, // Set to true in production with HTTPS
-      sameSite: 'lax'
-    }
+    cookieName: SESSION_COOKIE,
+    cookie: COOKIE_SERIALIZE_OPTIONS
   })
 
   // Discover OpenID configuration
@@ -117,6 +141,7 @@ async function main() {
     config,
     login: {
       usePKCE: true,
+      session,
       write,
       parameters: {
         redirect_uri: 'http://localhost:3000/login/callback',

@@ -1,4 +1,4 @@
-import cookie from '@fastify/cookie'
+import cookie, { type CookieSerializeOptions } from '@fastify/cookie'
 import createError from '@fastify/error'
 import secureSession from '@fastify/secure-session'
 import Fastify from 'fastify'
@@ -8,53 +8,26 @@ import openIDAuthPlugin, {
   discovery,
   type OpenIDAuthHandlers,
   type OpenIDReadTokens,
-  type OpenIDTokens,
+  type OpenIDSession,
   type OpenIDWriteTokens,
   type TokenEndpointResponse
 } from '../../src/index.ts'
 
 const AUTH_HANDLERS = Symbol.for('auth-handlers')
 const AUTH_TOKENS = Symbol.for('auth-tokens')
-
-// Environment variables
-const {
-  OIDC_ISSUER,
-  OIDC_CLIENT_ID,
-  OIDC_CLIENT_SECRET,
-  SESSION_KEY,
-  ACCESS_TOKEN_COOKIE,
-  REFRESH_TOKEN_COOKIE,
-  ID_TOKEN_COOKIE
-} = process.env
-
-if (
-  !OIDC_ISSUER ||
-  !OIDC_CLIENT_ID ||
-  !OIDC_CLIENT_SECRET ||
-  !SESSION_KEY ||
-  !ACCESS_TOKEN_COOKIE ||
-  !REFRESH_TOKEN_COOKIE ||
-  !ID_TOKEN_COOKIE
-) {
-  console.error('Missing required environment variables')
-  process.exit(1)
-}
-// Type-safe environment variables after validation
-const issuer = OIDC_ISSUER
-const clientId = OIDC_CLIENT_ID
-const clientSecret = OIDC_CLIENT_SECRET
-const sessionKey = SESSION_KEY
-const accessCookieName = ACCESS_TOKEN_COOKIE
-const refreshCookieName = REFRESH_TOKEN_COOKIE
-const idCookieName = ID_TOKEN_COOKIE
-
-// Cookie options
-const cookieOptions = {
+const AUTH_SESSION = 'oidc'
+const SESSION_COOKIE = 'session'
+const ACCESS_TOKEN_COOKIE = 'access_token'
+const REFRESH_TOKEN_COOKIE = 'refresh_token'
+const ID_TOKEN_COOKIE = 'id_token'
+const COOKIE_SERIALIZE_OPTIONS: CookieSerializeOptions = {
   path: '/',
   httpOnly: true,
   secure: false, // Set to true in production with HTTPS
-  sameSite: 'lax' as const
+  sameSite: 'lax'
 }
+
+type SessionValue = Record<string, unknown>
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -68,9 +41,23 @@ declare module 'fastify' {
 
 declare module '@fastify/secure-session' {
   interface SessionData {
-    [sessionKey]?: Omit<TokenEndpointResponse, OpenIDTokens>
+    [AUTH_SESSION]?: SessionValue
   }
 }
+
+// Environment variables
+const { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, SESSION_KEY } =
+  process.env
+
+if (!OIDC_ISSUER || !OIDC_CLIENT_ID || !OIDC_CLIENT_SECRET || !SESSION_KEY) {
+  console.error('Missing required environment variables')
+  process.exit(1)
+}
+// Type-safe environment variables after validation
+const issuer = OIDC_ISSUER
+const clientId = OIDC_CLIENT_ID
+const clientSecret = OIDC_CLIENT_SECRET
+const sessionKey = SESSION_KEY
 
 const NotAuthenticatedError = createError(
   'FST_UNAUTHORIZED',
@@ -78,8 +65,21 @@ const NotAuthenticatedError = createError(
   401
 )
 
+const session: OpenIDSession<SessionValue> = {
+  get(request, _reply) {
+    request.log.trace(`Getting ${AUTH_SESSION} session variable`)
+    return request.session.get(AUTH_SESSION)
+  },
+  set(request, _reply, value) {
+    request.log.trace(
+      `${value ? 'Setting' : 'Clearing'} ${AUTH_SESSION} session variable`
+    )
+    request.session.set(AUTH_SESSION, value)
+  }
+}
+
 // Read tokens from cookies and session (unified logic)
-const read: OpenIDReadTokens = (request) => {
+const read: OpenIDReadTokens = (request, reply) => {
   // Check if tokenset is already attached to request
   const oldTokenset = request[AUTH_TOKENS]
   if (oldTokenset) {
@@ -91,10 +91,10 @@ const read: OpenIDReadTokens = (request) => {
   }
   // Read from cookies and session (if available)
   const tokenset: Partial<TokenEndpointResponse> = {
-    access_token: request.cookies[accessCookieName],
-    refresh_token: request.cookies[refreshCookieName],
-    id_token: request.cookies[idCookieName],
-    ...request.session.get(sessionKey)
+    access_token: request.cookies[ACCESS_TOKEN_COOKIE],
+    refresh_token: request.cookies[REFRESH_TOKEN_COOKIE],
+    id_token: request.cookies[ID_TOKEN_COOKIE],
+    ...session.get(request, reply)
   }
   request.log.trace(tokenset, 'Read tokenset from cookies/session')
   return tokenset
@@ -105,32 +105,34 @@ const write: OpenIDWriteTokens = (request, reply, tokenset) => {
   request[AUTH_TOKENS] = tokenset
   const { access_token, refresh_token, id_token, ...rest } = tokenset ?? {}
   if (access_token) {
-    reply.log.trace({ access_token }, `Setting ${accessCookieName} cookie`)
-    reply.setCookie(accessCookieName, access_token, cookieOptions)
+    reply.log.trace({ access_token }, `Setting ${ACCESS_TOKEN_COOKIE} cookie`)
+    reply.setCookie(ACCESS_TOKEN_COOKIE, access_token, COOKIE_SERIALIZE_OPTIONS)
   } else {
-    reply.log.trace(`Clearing ${accessCookieName} cookie`)
-    reply.clearCookie(accessCookieName, cookieOptions)
+    reply.log.trace(`Clearing ${ACCESS_TOKEN_COOKIE} cookie`)
+    reply.clearCookie(ACCESS_TOKEN_COOKIE, COOKIE_SERIALIZE_OPTIONS)
   }
   if (refresh_token) {
-    reply.log.trace({ refresh_token }, `Setting ${refreshCookieName} cookie`)
-    reply.setCookie(refreshCookieName, refresh_token, cookieOptions)
+    reply.log.trace({ refresh_token }, `Setting ${REFRESH_TOKEN_COOKIE} cookie`)
+    reply.setCookie(
+      REFRESH_TOKEN_COOKIE,
+      refresh_token,
+      COOKIE_SERIALIZE_OPTIONS
+    )
   } else {
-    reply.log.trace(`Clearing ${refreshCookieName} cookie`)
-    reply.clearCookie(refreshCookieName, cookieOptions)
+    reply.log.trace(`Clearing ${REFRESH_TOKEN_COOKIE} cookie`)
+    reply.clearCookie(REFRESH_TOKEN_COOKIE, COOKIE_SERIALIZE_OPTIONS)
   }
   if (id_token) {
-    reply.log.trace({ id_token }, `Setting ${idCookieName} cookie`)
-    reply.setCookie(idCookieName, id_token, cookieOptions)
+    reply.log.trace({ id_token }, `Setting ${ID_TOKEN_COOKIE} cookie`)
+    reply.setCookie(ID_TOKEN_COOKIE, id_token, COOKIE_SERIALIZE_OPTIONS)
   } else {
-    reply.log.trace(`Clearing ${idCookieName} cookie`)
-    reply.clearCookie(idCookieName, cookieOptions)
+    reply.log.trace(`Clearing ${ID_TOKEN_COOKIE} cookie`)
+    reply.clearCookie(ID_TOKEN_COOKIE, COOKIE_SERIALIZE_OPTIONS)
   }
   if (Object.keys(rest).length > 0) {
-    request.log.trace(rest, `Setting ${sessionKey} session variable`)
-    request.session.set(sessionKey, rest)
+    session.set(request, reply, rest)
   } else {
-    request.log.trace(`Clearing ${sessionKey} session variable`)
-    request.session.set(sessionKey, undefined)
+    session.set(request, reply, undefined)
   }
 }
 
@@ -150,13 +152,8 @@ async function main() {
   // Register secure session plugin (required for OAuth state/nonce storage)
   await fastify.register(secureSession, {
     key: Buffer.from(sessionKey.padEnd(32, '0').slice(0, 32)),
-    cookieName: 'session',
-    cookie: {
-      path: '/',
-      httpOnly: true,
-      secure: false, // Set to true in production with HTTPS
-      sameSite: 'lax'
-    }
+    cookieName: SESSION_COOKIE,
+    cookie: COOKIE_SERIALIZE_OPTIONS
   })
 
   // Discover OpenID configuration
@@ -182,6 +179,7 @@ async function main() {
     config,
     login: {
       usePKCE: true,
+      session,
       write,
       parameters: {
         redirect_uri: 'http://localhost:3000/login/callback',
@@ -206,7 +204,6 @@ async function main() {
     logout: {
       read,
       write(request, response) {
-        // Skip tokenset
         return write.call(this, request, response)
       },
       parameters: {
@@ -221,7 +218,7 @@ async function main() {
   // Routes
   fastify
     .get('/', (request) => {
-      const hasToken = !!request.cookies[accessCookieName]
+      const hasToken = !!request.cookies[ACCESS_TOKEN_COOKIE]
       return hasToken
         ? {
             message: 'OpenID Connect Cookie Example (authenticated)',
