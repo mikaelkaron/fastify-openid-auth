@@ -205,10 +205,12 @@ describe('openIDRefreshHandlerFactory', () => {
     const fastify = await createTestFastify()
 
     const handler = openIDRefreshHandlerFactory(config, {
-      parameters: (request) => ({
-        scope: (request.query as { scope?: string }).scope ?? 'openid',
-        custom: 'value'
-      }),
+      tokenEndpoint: {
+        parameters: (request) => ({
+          scope: (request.query as { scope?: string }).scope ?? 'openid',
+          custom: 'value'
+        })
+      },
       read: () => tokenset,
       write: async (_request, reply) => {
         return reply.send({ refreshed: true })

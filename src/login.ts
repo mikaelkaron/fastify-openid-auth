@@ -1,6 +1,7 @@
 import createError from '@fastify/error'
-import type { FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify'
+import type { RouteHandlerMethod } from 'fastify'
 import {
+  type AuthorizationCodeGrantOptions,
   authorizationCodeGrant,
   buildAuthorizationUrl,
   type Configuration,
@@ -9,7 +10,10 @@ import {
   randomPKCECodeVerifier,
   randomState
 } from 'openid-client'
-import type { OpenIDWriteTokens } from './types.js'
+import type {
+  OpenIDWriteTokens,
+  ParametersOrParameterFunction
+} from './types.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
 
 declare module 'fastify' {
@@ -28,10 +32,12 @@ export type SessionData = Record<string, any>
 
 export type AuthorizationParameters = Record<string, string>
 
-export type AuthorizationParametersFunction = (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => AuthorizationParameters | PromiseLike<AuthorizationParameters>
+export type AuthorizationTokenEndpointParameters = Record<string, string>
+
+export type AuthorizationTokenEndpoint = {
+  parameters?: ParametersOrParameterFunction<AuthorizationTokenEndpointParameters>
+  options?: AuthorizationCodeGrantOptions
+}
 
 export interface CallbackChecks {
   state?: string
@@ -40,9 +46,10 @@ export interface CallbackChecks {
 }
 
 export interface OpenIDLoginHandlerOptions {
-  parameters?: AuthorizationParameters | AuthorizationParametersFunction
+  parameters?: ParametersOrParameterFunction<AuthorizationParameters>
   usePKCE?: boolean | 'plain' | 'S256'
   sessionKey?: string
+  tokenEndpoint?: AuthorizationTokenEndpoint
   verify?: OpenIDVerifyOptions
   write?: OpenIDWriteTokens
 }
@@ -114,7 +121,7 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
         : options.usePKCE
       : false
 
-  const { verify, write } = { ...options }
+  const { verify, write, tokenEndpoint } = { ...options }
 
   return async function openIDLoginHandler(request, reply) {
     const params = await resolveParameters(options?.parameters, request, reply)
@@ -184,11 +191,17 @@ export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
       `${request.protocol}://${request.hostname}:${request.socket.localPort}${request.url}`
     )
 
-    const tokenset = await authorizationCodeGrant(config, currentUrl, {
-      pkceCodeVerifier: callbackChecks.pkceCodeVerifier,
-      expectedState: callbackChecks.state,
-      expectedNonce: callbackChecks.nonce
-    })
+    const tokenset = await authorizationCodeGrant(
+      config,
+      currentUrl,
+      {
+        pkceCodeVerifier: callbackChecks.pkceCodeVerifier,
+        expectedState: callbackChecks.state,
+        expectedNonce: callbackChecks.nonce
+      },
+      await resolveParameters(tokenEndpoint?.parameters, request, reply),
+      tokenEndpoint?.options
+    )
 
     const verified =
       verify !== undefined ? await openIDJWTVerify(tokenset, verify) : undefined

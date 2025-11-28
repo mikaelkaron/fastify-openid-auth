@@ -15,8 +15,7 @@
   },
   "scripts": {
     "test": "node --import tsx --test",
-    "test:types": "tsc --noEmit -p tests/types/tsconfig.json",
-    "build": "tsc --declaration -p tsconfig.json",
+    "build": "tsc --declaration",
     "clean": "shx rm -rf dist",
     "check": "biome check",
     "lint": "biome lint",

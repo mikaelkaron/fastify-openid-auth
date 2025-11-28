@@ -1,18 +1,17 @@
-import type { FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify'
+import type { RouteHandlerMethod } from 'fastify'
 import { buildEndSessionUrl, type Configuration } from 'openid-client'
-import type { OpenIDReadTokens, OpenIDWriteTokens } from './types.js'
+import type {
+  OpenIDReadTokens,
+  OpenIDWriteTokens,
+  ParametersOrParameterFunction
+} from './types.js'
 import { resolveParameters } from './utils.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
 
 export type EndSessionParameters = Record<string, string>
 
-export type EndSessionParametersFunction = (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => EndSessionParameters | PromiseLike<EndSessionParameters>
-
 export interface OpenIDLogoutHandlerOptions {
-  parameters?: EndSessionParameters | EndSessionParametersFunction
+  parameters?: ParametersOrParameterFunction<EndSessionParameters>
   verify?: OpenIDVerifyOptions
   read: OpenIDReadTokens
   write?: OpenIDWriteTokens

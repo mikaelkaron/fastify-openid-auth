@@ -1,7 +1,15 @@
 import { createError } from '@fastify/error'
-import type { FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify'
-import { type Configuration, refreshTokenGrant } from 'openid-client'
-import type { OpenIDReadTokens, OpenIDWriteTokens } from './types.js'
+import type { RouteHandlerMethod } from 'fastify'
+import {
+  type Configuration,
+  type DPoPOptions,
+  refreshTokenGrant
+} from 'openid-client'
+import type {
+  OpenIDReadTokens,
+  OpenIDWriteTokens,
+  ParametersOrParameterFunction
+} from './types.js'
 import { resolveParameters } from './utils.js'
 import { type OpenIDVerifyOptions, openIDJWTVerify } from './verify.js'
 
@@ -11,15 +19,15 @@ export const OpenIDRefreshTokenMissingError = createError(
   400
 )
 
-export type RefreshParameters = Record<string, string>
+export type RefreshTokenEndpointParameters = Record<string, string>
 
-export type RefreshParametersFunction = (
-  request: FastifyRequest,
-  reply: FastifyReply
-) => RefreshParameters | PromiseLike<RefreshParameters>
+export type RefreshTokenEndpoint = {
+  parameters?: ParametersOrParameterFunction<RefreshTokenEndpointParameters>
+  options?: DPoPOptions
+}
 
 export interface OpenIDRefreshHandlerOptions {
-  parameters?: RefreshParameters | RefreshParametersFunction
+  tokenEndpoint?: RefreshTokenEndpoint
   verify?: OpenIDVerifyOptions
   read: OpenIDReadTokens
   write?: OpenIDWriteTokens
@@ -39,7 +47,7 @@ const isTokenExpired = (expiresAt: number | undefined): boolean => {
 
 export const openIDRefreshHandlerFactory: OpenIDRefreshHandlerFactory = (
   config,
-  { verify, read, write, parameters }
+  { tokenEndpoint, verify, read, write }
 ) =>
   async function openIDRefreshHandler(request, reply) {
     const oldTokens = await read.call(this, request, reply)
@@ -62,7 +70,8 @@ export const openIDRefreshHandlerFactory: OpenIDRefreshHandlerFactory = (
       const newTokenset = await refreshTokenGrant(
         config,
         refreshToken,
-        await resolveParameters(parameters, request, reply)
+        await resolveParameters(tokenEndpoint?.parameters, request, reply),
+        tokenEndpoint?.options
       )
       const verified =
         verify !== undefined

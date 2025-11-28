@@ -2,6 +2,13 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { JWTVerifyResult } from 'jose'
 import type { TokenEndpointResponse } from 'openid-client'
 
+export type ParametersFunction<T> = (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => T | PromiseLike<T>
+
+export type ParametersOrParameterFunction<T> = T | ParametersFunction<T>
+
 export type OpenIDTokens = 'id_token' | 'access_token' | 'refresh_token'
 
 export type OpenIDJWTVerified = {
@@ -12,7 +19,9 @@ export type OpenIDReadTokens = (
   this: FastifyInstance,
   request: FastifyRequest,
   reply: FastifyReply
-) => Promise<Partial<TokenEndpointResponse>> | Partial<TokenEndpointResponse>
+) =>
+  | PromiseLike<Partial<TokenEndpointResponse>>
+  | Partial<TokenEndpointResponse>
 
 export type OpenIDWriteTokens = (
   this: FastifyInstance,
@@ -20,4 +29,4 @@ export type OpenIDWriteTokens = (
   reply: FastifyReply,
   tokenset?: Partial<TokenEndpointResponse>,
   verified?: OpenIDJWTVerified
-) => Promise<void> | void
+) => PromiseLike<void> | void
