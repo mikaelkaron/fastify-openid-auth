@@ -1,3 +1,10 @@
+# [11.1.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v11.0.0...v11.1.0) (2025-11-28)
+
+
+### Features
+
+* streamline OpenID handlers and options structure ([6f6e654](https://github.com/mikaelkaron/fastify-openid-auth/commit/6f6e654a9bd4a50d90ae9f5a737f647134ef99d8))
+
 # [11.0.0](https://github.com/mikaelkaron/fastify-openid-auth/compare/v10.1.0...v11.0.0) (2025-11-28)
 
 
