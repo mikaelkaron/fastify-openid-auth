@@ -18,18 +18,36 @@
 npm install fastify-openid-auth
 ```
 
-## Plugin API & Usage
 
-Register the plugin and configure it for your OpenID provider. The plugin decorates your Fastify instance with authentication handlers, which you can use in your routes.
+## `openIDHandlersFactory`
+
+The core of this library is the `openIDHandlersFactory`, which creates handlers for OpenID Connect authentication. You can use it directly for custom integration, testing, or advanced scenarios:
+
+```ts
+import { openIDHandlersFactory } from 'fastify-openid-auth'
+
+const config = { /* openid-client config */ }
+const { login, verify, refresh, logout } = openIDHandlersFactory(config, {
+	login: { /* login handler options */ },
+	verify: { /* verify handler options */ },
+	refresh: { /* refresh handler options */ },
+	logout: { /* logout handler options */ }
+})
+
+// Use login, verify, refresh, logout as Fastify route handlers
+```
+
+## `openIDAuthPlugin`
+
+For most users, it's easiest to use the Fastify plugin wrapper, which registers and decorates your Fastify instance with the authentication handlers:
 
 ```ts
 import Fastify from 'fastify'
-import openIDAuthPlugin, { type OpenIDAuthHandlers } from 'fastify-openid-auth'
+import openIDAuthPlugin from 'fastify-openid-auth'
 
 const fastify = Fastify()
 const AUTH_HANDLERS = Symbol.for('auth-handlers')
 
-// Register plugin
 fastify.register(openIDAuthPlugin, {
 	decorator: AUTH_HANDLERS,
 	config: { /* openid-client config */ },
@@ -39,9 +57,16 @@ fastify.register(openIDAuthPlugin, {
 	logout: { /* logout handler options */ }
 })
 
-// Destructure handlers for use in routes
 const { login, verify, refresh, logout } = fastify[AUTH_HANDLERS]
+
+// Use login, verify, refresh, logout as Fastify route handlers
 ```
+
+### Configuration Options
+
+- `decorator`: string or symbol to decorate Fastify instance
+- `config`: openid-client configuration object
+- `login`, `verify`, `refresh`, `logout`: handler options
 
 ### Token Management
 
@@ -56,12 +81,6 @@ See the example projects for real implementations.
 
 - [`examples/basic`](examples/basic) — Bearer token authentication
 - [`examples/cookies`](examples/cookies) — Cookie token authentication
-
-## Configuration Options
-
-- `decorator`: string or symbol to decorate Fastify instance
-- `config`: openid-client configuration object
-- `login`, `verify`, `refresh`, `logout`: handler options
 
 ## License
 
