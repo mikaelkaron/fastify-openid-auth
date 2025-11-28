@@ -29,6 +29,36 @@ describe('openIDLoginHandlerFactory', () => {
   })
 
   describe('authorization request', () => {
+    it('should support dynamic authorization parameters function with custom redirect_uri', async () => {
+      const session = createMockSession()
+      const fastify = await createTestFastify({ session })
+      const handler = openIDLoginHandlerFactory(config, {
+        parameters: (request) => ({
+          scope: 'openid',
+          redirect_uri:
+            (request.query as { redirect?: string }).redirect ??
+            'http://localhost:8080/default-login'
+        })
+      })
+
+      fastify.get('/login', handler)
+      await fastify.ready()
+
+      const response = await fastify.inject({
+        method: 'GET',
+        url: '/login?redirect=http://localhost:8080/custom-login'
+      })
+
+      const location = response.headers.location as string
+      assert.ok(
+        location.includes(
+          'redirect_uri=' +
+            encodeURIComponent('http://localhost:8080/custom-login')
+        )
+      )
+
+      await fastify.close()
+    })
     it('should redirect to authorization URL with default parameters', async () => {
       const session = createMockSession()
       const fastify = await createTestFastify({ session })

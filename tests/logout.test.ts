@@ -28,6 +28,43 @@ describe('openIDLogoutHandlerFactory', () => {
   })
 
   describe('logout request', () => {
+    it('should support dynamic end session parameters function', async () => {
+      const tokenset = await createTokenSet({
+        issuer: provider.issuer,
+        clientId: 'test-client'
+      })
+
+      const fastify = await createTestFastify()
+
+      const handler = openIDLogoutHandlerFactory(config, {
+        parameters: (request) => ({
+          post_logout_redirect_uri:
+            (request.query as { redirect?: string }).redirect ??
+            'http://localhost:8080/default-logout'
+        }),
+        read: () => tokenset
+      })
+
+      fastify.get('/logout', handler)
+      await fastify.ready()
+
+      const response = await fastify.inject({
+        method: 'GET',
+        url: '/logout?redirect=http://localhost:8080/custom-logout'
+      })
+
+      const location = response.headers.location as string
+      // Debug output for diagnosis
+      console.log('DEBUG: logout dynamic location:', location)
+      assert.ok(
+        location.includes(
+          'post_logout_redirect_uri=' +
+            encodeURIComponent('http://localhost:8080/custom-logout')
+        )
+      )
+
+      await fastify.close()
+    })
     it('should redirect to end session URL', async () => {
       const tokenset = await createTokenSet({
         issuer: provider.issuer,

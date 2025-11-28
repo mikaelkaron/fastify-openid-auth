@@ -26,7 +26,11 @@ import type {
   OpenIDAuthHandlers
 } from '../../src/plugin.js'
 // Test plugin exports
-import { openIDAuthPlugin, default as plugin } from '../../src/plugin.js'
+import {
+  openIDAuthPlugin,
+  openIDHandlersFactory,
+  default as plugin
+} from '../../src/plugin.js'
 // Test refresh exports
 import { openIDRefreshHandlerFactory } from '../../src/refresh.js'
 // Test types exports
@@ -172,7 +176,19 @@ const _writeTokens: OpenIDWriteTokens = async function (
 // Default export should be the plugin
 const _pluginExport: typeof plugin = defaultExport
 
+// Type assertion for openIDHandlersFactory
+const _handlersFactoryResult = openIDHandlersFactory(mockConfig, {
+  login: { parameters: { scope: 'openid' } },
+  verify: { ...verifyOptions, read: async () => ({}) as TokenEndpointResponse },
+  refresh: { read: async () => ({}) as TokenEndpointResponse },
+  logout: { read: async () => ({}) as TokenEndpointResponse }
+})
+// Should return OpenIDAuthHandlers
+const _handlersFactoryTypeCheck: OpenIDAuthHandlers = _handlersFactoryResult
+
 // Runtime check that all exports exist
+if (!allExports.openIDHandlersFactory)
+  throw new Error('Missing openIDHandlersFactory')
 if (!allExports.openIDLoginHandlerFactory)
   throw new Error('Missing openIDLoginHandlerFactory')
 if (!allExports.openIDVerifyHandlerFactory)

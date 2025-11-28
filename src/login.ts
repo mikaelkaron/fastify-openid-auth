@@ -100,15 +100,7 @@ const resolveSessionKey = (config: Configuration): string => {
   return `oidc:${new URL(issuer).hostname}`
 }
 
-const resolveParameters = async (
-  parameters:
-    | AuthorizationParameters
-    | AuthorizationParametersFunction
-    | undefined,
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<AuthorizationParameters | undefined> =>
-  typeof parameters === 'function' ? parameters(request, reply) : parameters
+import { resolveParameters } from './utils.js'
 
 export const openIDLoginHandlerFactory: OpenIDLoginHandlerFactory = (
   config,
