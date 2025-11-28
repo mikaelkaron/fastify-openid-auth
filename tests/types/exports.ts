@@ -5,13 +5,18 @@
  * This file is type-checked but not executed.
  */
 
-import type { FastifyInstance, RouteHandlerMethod } from 'fastify'
+// Imports: grouped by feature
+import type {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  RouteHandlerMethod
+} from 'fastify'
 import type { CryptoKey } from 'jose'
 import type { Configuration, TokenEndpointResponse } from 'openid-client'
 import * as allExports from '../../src/index.js'
-// Test index exports (re-exports everything)
 import { default as defaultExport } from '../../src/index.js'
-// Test login exports
+// Login
 import {
   type AuthorizationParametersFunction,
   openIDLoginHandlerFactory,
@@ -19,35 +24,34 @@ import {
   SessionValueError,
   SupportedMethodError
 } from '../../src/login.js'
-// Test logout exports
+// Logout
 import { openIDLogoutHandlerFactory } from '../../src/logout.js'
 import type {
   FastifyOpenIDAuthPluginOptions,
   OpenIDAuthHandlers
 } from '../../src/plugin.js'
-// Test plugin exports
+// Plugin
 import {
   openIDAuthPlugin,
   openIDHandlersFactory,
   default as plugin
 } from '../../src/plugin.js'
-// Test refresh exports
+// Refresh
 import { openIDRefreshHandlerFactory } from '../../src/refresh.js'
-// Test types exports
+// Types
 import type {
   OpenIDReadTokens,
   OpenIDTokens,
   OpenIDWriteTokens
 } from '../../src/types.js'
-// Test verify exports
+// Verify
 import {
   type OpenIDVerifyOptions,
   openIDVerifyHandlerFactory
 } from '../../src/verify.js'
 
-// Type assertions
-
-// Login handler factory should return RouteHandlerMethod
+// --- Type assertions ---
+// Login handler factory
 const mockConfig = {} as Configuration
 const loginHandler: RouteHandlerMethod = openIDLoginHandlerFactory(mockConfig)
 const _loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(
@@ -57,7 +61,6 @@ const _loginHandlerWithOptions: RouteHandlerMethod = openIDLoginHandlerFactory(
     sessionKey: 'test'
   }
 )
-
 // Authorization parameters function type
 const _authParamsFunc: AuthorizationParametersFunction = async (
   _request,
@@ -66,28 +69,7 @@ const _authParamsFunc: AuthorizationParametersFunction = async (
   scope: 'openid profile'
 })
 
-// Verify options type
-const verifyOptions: OpenIDVerifyOptions = {
-  key: {} as CryptoKey,
-  tokens: ['id_token', 'access_token'],
-  options: { issuer: 'test' }
-}
-
-// Verify handler factory should return RouteHandlerMethod
-const verifyHandler: RouteHandlerMethod = openIDVerifyHandlerFactory({
-  ...verifyOptions,
-  read: async () => ({}) as TokenEndpointResponse
-})
-
-// Refresh handler factory should return RouteHandlerMethod
-const refreshHandler: RouteHandlerMethod = openIDRefreshHandlerFactory(
-  mockConfig,
-  {
-    read: async () => ({}) as TokenEndpointResponse
-  }
-)
-
-// Logout handler factory should return RouteHandlerMethod
+// Logout handler factory
 const logoutHandler: RouteHandlerMethod = openIDLogoutHandlerFactory(
   mockConfig,
   {
@@ -95,12 +77,44 @@ const logoutHandler: RouteHandlerMethod = openIDLogoutHandlerFactory(
   }
 )
 
-// Error classes should be constructable
+// Refresh handler factory
+const refreshHandler: RouteHandlerMethod = openIDRefreshHandlerFactory(
+  mockConfig,
+  {
+    read: async () => ({}) as TokenEndpointResponse
+  }
+)
+// Dynamic parameters function for refresh
+const _refreshParamsFunc: (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => Promise<{ scope: string; custom: string }> = async (_request, _reply) => ({
+  scope: 'openid',
+  custom: 'value'
+})
+const _refreshHandlerWithParams: RouteHandlerMethod =
+  openIDRefreshHandlerFactory(mockConfig, {
+    parameters: _refreshParamsFunc,
+    read: async () => ({}) as TokenEndpointResponse
+  })
+
+// Verify handler factory
+const verifyOptions: OpenIDVerifyOptions = {
+  key: {} as CryptoKey,
+  tokens: ['id_token', 'access_token'],
+  options: { issuer: 'test' }
+}
+const verifyHandler: RouteHandlerMethod = openIDVerifyHandlerFactory({
+  ...verifyOptions,
+  read: async () => ({}) as TokenEndpointResponse
+})
+
+// Error classes
 const _sessionKeyError = new SessionKeyError()
 const _sessionValueError = new SessionValueError('key')
 const _supportedMethodError = new SupportedMethodError()
 
-// Plugin exports should be functions
+// Plugin exports
 if (typeof plugin !== 'function') throw new Error('plugin should be a function')
 if (typeof openIDAuthPlugin !== 'function')
   throw new Error('openIDAuthPlugin should be a function')
@@ -112,7 +126,6 @@ const _handlers: OpenIDAuthHandlers = {
   refresh: refreshHandler,
   logout: logoutHandler
 }
-
 // Plugin options type check
 const _pluginOptions: FastifyOpenIDAuthPluginOptions = {
   decorator: 'openid',
@@ -129,16 +142,15 @@ const _pluginOptions: FastifyOpenIDAuthPluginOptions = {
   }
 }
 
-// Test destructuring handlers from decorator
+// Handlers from decorator
 const fastifyInstance = {} as FastifyInstance & { openid: OpenIDAuthHandlers }
 const { login, verify, refresh, logout } = fastifyInstance.openid
-// Handlers should be usable as RouteHandlerMethod
 const _loginHandler: RouteHandlerMethod = login
 const _verifyHandler: RouteHandlerMethod = verify
 const _refreshHandler: RouteHandlerMethod = refresh
 const _logoutHandler: RouteHandlerMethod = logout
 
-// Test using verify as preHandler in Fastify route
+// Fastify route config using verify as preHandler
 interface AuthRequest extends FastifyInstance {
   'auth-tokens'?: TokenEndpointResponse
 }
@@ -149,7 +161,7 @@ const _routeConfig = {
   }
 }
 
-// OpenIDTokens should be a union of token keys
+// OpenIDTokens union
 const _tokenType: OpenIDTokens = 'id_token'
 const _tokenType2: OpenIDTokens = 'access_token'
 const _tokenType3: OpenIDTokens = 'refresh_token'
@@ -162,7 +174,6 @@ const _readTokens: OpenIDReadTokens = async function (
 ) {
   return {} as TokenEndpointResponse
 }
-
 const _writeTokens: OpenIDWriteTokens = async function (
   this: FastifyInstance,
   _request,
@@ -176,17 +187,16 @@ const _writeTokens: OpenIDWriteTokens = async function (
 // Default export should be the plugin
 const _pluginExport: typeof plugin = defaultExport
 
-// Type assertion for openIDHandlersFactory
+// openIDHandlersFactory type assertion
 const _handlersFactoryResult = openIDHandlersFactory(mockConfig, {
   login: { parameters: { scope: 'openid' } },
   verify: { ...verifyOptions, read: async () => ({}) as TokenEndpointResponse },
   refresh: { read: async () => ({}) as TokenEndpointResponse },
   logout: { read: async () => ({}) as TokenEndpointResponse }
 })
-// Should return OpenIDAuthHandlers
 const _handlersFactoryTypeCheck: OpenIDAuthHandlers = _handlersFactoryResult
 
-// Runtime check that all exports exist
+// --- Runtime existence checks ---
 if (!allExports.openIDHandlersFactory)
   throw new Error('Missing openIDHandlersFactory')
 if (!allExports.openIDLoginHandlerFactory)
