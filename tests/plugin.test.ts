@@ -35,10 +35,8 @@ describe('openIDAuthPlugin', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const session = createTestSession()
     const fastify = Fastify({ logger: false })
-
     await fastify.register(plugin, {
       decorator: 'openid',
       config,
@@ -59,10 +57,7 @@ describe('openIDAuthPlugin', () => {
         read: () => tokenset
       }
     })
-
     await fastify.ready()
-
-    // Check that the decorator was added
     assert.ok((fastify as unknown as { openid: OpenIDAuthHandlers }).openid)
     const handlers = (fastify as unknown as { openid: OpenIDAuthHandlers })
       .openid
@@ -70,7 +65,6 @@ describe('openIDAuthPlugin', () => {
     assert.ok(typeof handlers.verify === 'function')
     assert.ok(typeof handlers.refresh === 'function')
     assert.ok(typeof handlers.logout === 'function')
-
     await fastify.close()
   })
 
@@ -80,11 +74,9 @@ describe('openIDAuthPlugin', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const session = createTestSession()
     const fastify = Fastify({ logger: false })
     const decoratorSymbol = Symbol('openid')
-
     await fastify.register(plugin, {
       decorator: decoratorSymbol,
       config,
@@ -105,16 +97,12 @@ describe('openIDAuthPlugin', () => {
         read: () => tokenset
       }
     })
-
     await fastify.ready()
-
-    // Check that the symbol decorator was added
     assert.ok(
       (fastify as unknown as Record<symbol, OpenIDAuthHandlers>)[
         decoratorSymbol
       ]
     )
-
     await fastify.close()
   })
 
@@ -124,7 +112,6 @@ describe('openIDAuthPlugin', () => {
 
   it('should export default plugin', () => {
     assert.ok(typeof plugin === 'function')
-    // fastify-plugin wraps the function with metadata
     assert.ok(plugin)
   })
 
@@ -134,10 +121,8 @@ describe('openIDAuthPlugin', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const session = createTestSession()
     const fastify = Fastify({ logger: false })
-
     await fastify.register(plugin, {
       decorator: 'openid',
       config,
@@ -159,38 +144,25 @@ describe('openIDAuthPlugin', () => {
         read: () => tokenset
       }
     })
-
     const openid = (fastify as unknown as { openid: OpenIDAuthHandlers }).openid
-
     fastify.get('/login', openid.login)
     fastify.get('/verify', openid.verify)
     fastify.get('/refresh', openid.refresh)
     fastify.get('/logout', openid.logout)
-
     await fastify.ready()
-
-    // Test login route redirects
-    const loginResponse = await fastify.inject({
-      method: 'GET',
-      url: '/login'
-    })
+    const loginResponse = await fastify.inject({ method: 'GET', url: '/login' })
     assert.strictEqual(loginResponse.statusCode, 302)
-
-    // Test verify route
     const verifyResponse = await fastify.inject({
       method: 'GET',
       url: '/verify'
     })
     assert.strictEqual(verifyResponse.statusCode, 200)
     assert.deepStrictEqual(JSON.parse(verifyResponse.body), { verified: true })
-
-    // Test logout route redirects
     const logoutResponse = await fastify.inject({
       method: 'GET',
       url: '/logout'
     })
     assert.strictEqual(logoutResponse.statusCode, 302)
-
     await fastify.close()
   })
 })

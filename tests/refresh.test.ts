@@ -1,5 +1,7 @@
 import assert from 'node:assert'
 import { after, before, describe, it } from 'node:test'
+import type { Next, ParameterizedContext } from 'koa'
+import bodyParser from 'koa-bodyparser'
 import type { Configuration } from 'openid-client'
 import { openIDRefreshHandlerFactory } from '../src/refresh.js'
 import { getTestKeys } from './fixtures/keys.ts'
@@ -31,29 +33,18 @@ describe('openIDRefreshHandlerFactory', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const fastify = await createTestFastify()
-
     let writeCalled = false
-
     const handler = openIDRefreshHandlerFactory(config, {
       read: () => tokenset,
       write: async () => {
         writeCalled = true
       }
     })
-
     fastify.get('/refresh', handler)
     await fastify.ready()
-
-    await fastify.inject({
-      method: 'GET',
-      url: '/refresh'
-    })
-
-    // Write should not be called for non-expired tokens
+    await fastify.inject({ method: 'GET', url: '/refresh' })
     assert.strictEqual(writeCalled, false)
-
     await fastify.close()
   })
 
@@ -62,33 +53,20 @@ describe('openIDRefreshHandlerFactory', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const fastify = await createTestFastify()
-
     const handler = openIDRefreshHandlerFactory(config, {
       read: () => tokenset,
       write: async (_request, reply) => {
         return reply.send({ refreshed: true })
       }
     })
-
     fastify.get('/refresh', handler)
     await fastify.ready()
-
-    // This will fail because the refresh_token is not valid for the provider
-    // but it tests that the refresh attempt is made
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/refresh'
-    })
-
-    // Should attempt refresh (and fail with invalid token)
-    // v6 returns 400 Bad Request for invalid tokens
+    const response = await fastify.inject({ method: 'GET', url: '/refresh' })
     assert.ok(
       response.statusCode === 400 || response.statusCode === 500,
       `Expected 400 or 500, got ${response.statusCode}`
     )
-
     await fastify.close()
   })
 
@@ -97,35 +75,21 @@ describe('openIDRefreshHandlerFactory', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
-    // Create tokenset without expires_at to trigger refresh
     const { expires_at: _, ...tokensetWithoutExpiry } = tokenset
-
     const fastify = await createTestFastify()
-
     const handler = openIDRefreshHandlerFactory(config, {
       read: () => tokensetWithoutExpiry,
       write: async (_request, reply) => {
         return reply.send({ refreshed: true })
       }
     })
-
     fastify.get('/refresh', handler)
     await fastify.ready()
-
-    // This will fail because the refresh_token is not valid
-    // but it tests that the refresh attempt is made when expires_at is missing
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/refresh'
-    })
-
-    // v6 returns 400 Bad Request for invalid tokens
+    const response = await fastify.inject({ method: 'GET', url: '/refresh' })
     assert.ok(
       response.statusCode === 400 || response.statusCode === 500,
       `Expected 400 or 500, got ${response.statusCode}`
     )
-
     await fastify.close()
   })
 
@@ -134,28 +98,18 @@ describe('openIDRefreshHandlerFactory', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const fastify = await createTestFastify()
-
     let readCalled = false
-
     const handler = openIDRefreshHandlerFactory(config, {
       read: () => {
         readCalled = true
         return tokenset
       }
     })
-
     fastify.get('/refresh', handler)
     await fastify.ready()
-
-    await fastify.inject({
-      method: 'GET',
-      url: '/refresh'
-    })
-
+    await fastify.inject({ method: 'GET', url: '/refresh' })
     assert.strictEqual(readCalled, true)
-
     await fastify.close()
   })
 
@@ -165,34 +119,19 @@ describe('openIDRefreshHandlerFactory', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const fastify = await createTestFastify()
-
-    // Token is not expired, so verify won't be called
-    // This just tests that the option is accepted
     const handler = openIDRefreshHandlerFactory(config, {
       read: () => tokenset,
       verify: {
         key: keys.publicKey,
         tokens: ['id_token'],
-        options: {
-          issuer: provider.issuer,
-          audience: 'test-client'
-        }
+        options: { issuer: provider.issuer, audience: 'test-client' }
       }
     })
-
     fastify.get('/refresh', handler)
     await fastify.ready()
-
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/refresh'
-    })
-
-    // Non-expired token, no refresh
+    const response = await fastify.inject({ method: 'GET', url: '/refresh' })
     assert.strictEqual(response.statusCode, 200)
-
     await fastify.close()
   })
 
@@ -201,41 +140,51 @@ describe('openIDRefreshHandlerFactory', () => {
       issuer: provider.issuer,
       clientId: 'test-client'
     })
-
     const fastify = await createTestFastify()
-
+    let lastTokenRequestBody: unknown = null
+    // Add bodyParser middleware before captureMiddleware for this test
+    provider.testMiddleware.add(bodyParser())
+    const captureMiddleware = async (ctx: ParameterizedContext, next: Next) => {
+      if (ctx.path === '/token' && ctx.method === 'POST') {
+        if (typeof ctx.request.body === 'string') {
+          try {
+            lastTokenRequestBody = JSON.parse(ctx.request.body)
+          } catch {
+            lastTokenRequestBody = ctx.request.body
+          }
+        } else {
+          lastTokenRequestBody = ctx.request.body
+        }
+      }
+      await next()
+    }
+    provider.testMiddleware.add(captureMiddleware)
     const handler = openIDRefreshHandlerFactory(config, {
       tokenEndpoint: {
         parameters: (request) => ({
-          scope: (request.query as { scope?: string }).scope ?? 'openid',
-          custom: 'value'
+          custom: (request.query as { custom?: string }).custom ?? 'default'
         })
       },
-      read: () => tokenset,
-      write: async (_request, reply) => {
-        return reply.send({ refreshed: true })
-      }
+      read: () => tokenset
     })
-
     fastify.get('/refresh', handler)
     await fastify.ready()
-
-    const response = await fastify.inject({
-      method: 'GET',
-      url: '/refresh?scope=custom-scope'
-    })
-
-    // Should attempt refresh (and fail with invalid token)
-    // But the URL should include the custom scope
-    const location = response.headers.location as string | undefined
-    // If redirect is used, check location; otherwise, check response
-    if (location) {
-      assert.ok(location.includes('scope=custom-scope'))
+    await fastify.inject({ method: 'GET', url: '/refresh?custom=bar' })
+    // Remove the test-specific middleware after the test
+    provider.testMiddleware.remove(captureMiddleware)
+    assert.ok(lastTokenRequestBody)
+    if (
+      typeof lastTokenRequestBody === 'object' &&
+      lastTokenRequestBody !== null &&
+      'custom' in lastTokenRequestBody
+    ) {
+      assert.strictEqual(
+        (lastTokenRequestBody as { custom: string }).custom,
+        'bar'
+      )
     } else {
-      // If not a redirect, check that parameters were used in some way
-      assert.ok(response.statusCode === 400 || response.statusCode === 500)
+      assert.fail('lastTokenRequestBody does not have a custom property')
     }
-
     await fastify.close()
   })
 })

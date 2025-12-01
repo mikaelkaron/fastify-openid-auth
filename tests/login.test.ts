@@ -13,7 +13,6 @@ import { createTestConfig } from './helpers/config.ts'
 import { createTestFastify, createTestSession } from './helpers/fastify.ts'
 
 describe('openIDLoginHandlerFactory', () => {
-  // Use createTestSession for required session API
   let provider: TestProvider
   let config: Configuration
 
@@ -43,15 +42,12 @@ describe('openIDLoginHandlerFactory', () => {
         }),
         session
       })
-
       fastify.get('/login', handler)
       await fastify.ready()
-
       const response = await fastify.inject({
         method: 'GET',
         url: '/login?redirect=http://localhost:8080/custom-login'
       })
-
       const location = response.headers.location as string
       assert.ok(
         location.includes(
@@ -59,24 +55,21 @@ describe('openIDLoginHandlerFactory', () => {
             encodeURIComponent('http://localhost:8080/custom-login')
         )
       )
-
       await fastify.close()
     })
+
     it('should redirect to authorization URL with default parameters', async () => {
       const session = createTestSession()
       const fastify = await createTestFastify()
       const handler = openIDLoginHandlerFactory(config, {
         session
       })
-
       fastify.get('/login', handler)
       await fastify.ready()
-
       const response = await fastify.inject({
         method: 'GET',
         url: '/login'
       })
-
       assert.strictEqual(response.statusCode, 302)
       const location = response.headers.location as string
       assert.ok(location.startsWith(provider.issuer))
@@ -84,15 +77,12 @@ describe('openIDLoginHandlerFactory', () => {
       assert.ok(location.includes('scope=openid'))
       assert.ok(location.includes('state='))
       assert.ok(location.includes('nonce='))
-
-      // Session should have callback checks stored
       const mockRequest = {} as FastifyRequest
       const mockReply = {} as FastifyReply
       const callbackChecks = await session.get(mockRequest, mockReply)
       assert.ok(callbackChecks)
       assert.ok((callbackChecks as { state: string }).state)
       assert.ok((callbackChecks as { nonce: string }).nonce)
-
       await fastify.close()
     })
 
@@ -102,20 +92,16 @@ describe('openIDLoginHandlerFactory', () => {
       const handler = openIDLoginHandlerFactory(config, {
         session
       })
-
       fastify.get('/login', handler)
       await fastify.ready()
-
       await fastify.inject({
         method: 'GET',
         url: '/login'
       })
-
       const mockRequest = {} as FastifyRequest
       const mockReply = {} as FastifyReply
       const callbackChecks = await session.get(mockRequest, mockReply)
       assert.ok(callbackChecks)
-
       await fastify.close()
     })
 
@@ -129,23 +115,18 @@ describe('openIDLoginHandlerFactory', () => {
         },
         session
       })
-
       fastify.get('/login', handler)
       await fastify.ready()
-
       const response = await fastify.inject({
         method: 'GET',
         url: '/login'
       })
-
       const location = response.headers.location as string
-      // Check for scope with either + or %20 encoding
       assert.ok(
         location.includes('scope=openid+profile+email') ||
           location.includes('scope=openid%20profile%20email')
       )
       assert.ok(location.includes('prompt=consent'))
-
       await fastify.close()
     })
 
@@ -160,18 +141,14 @@ describe('openIDLoginHandlerFactory', () => {
         }),
         session
       })
-
       fastify.get('/login', handler)
       await fastify.ready()
-
       const response = await fastify.inject({
         method: 'GET',
         url: '/login?customState=my-state'
       })
-
       const location = response.headers.location as string
       assert.ok(location.includes('state=my-state'))
-
       await fastify.close()
     })
 
@@ -183,19 +160,15 @@ describe('openIDLoginHandlerFactory', () => {
           usePKCE: true,
           session
         })
-
         fastify.get('/login', handler)
         await fastify.ready()
-
         const response = await fastify.inject({
           method: 'GET',
           url: '/login'
         })
-
         const location = response.headers.location as string
         assert.ok(location.includes('code_challenge='))
         assert.ok(location.includes('code_challenge_method=S256'))
-
         // Session should have pkceCodeVerifier stored
         const mockRequest = {} as FastifyRequest
         const mockReply = {} as FastifyReply
@@ -224,6 +197,7 @@ describe('openIDLoginHandlerFactory', () => {
         })
 
         const location = response.headers.location as string
+        assert.ok(location.includes('code_challenge='))
         assert.ok(location.includes('code_challenge_method=S256'))
 
         await fastify.close()
